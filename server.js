@@ -181,6 +181,29 @@ app.use(express.static(path.join(__dirname, 'public')));
 /* ==========================================================================
    SERVERLESS MEDIA DISPATCHER (Serves Base64 / MongoDB / Local Files)
    ========================================================================== */
+app.get('/uploads/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const localUploadPath = path.join(uploadDir, filename);
+
+  if (fs.existsSync(localUploadPath)) {
+    return res.sendFile(localUploadPath);
+  }
+
+  db.getMediaFile(filename, (err, file) => {
+    if (!err && file && file.dataUri) {
+      const parts = file.dataUri.split(',');
+      const match = parts[0].match(/:(.*?);/);
+      const mime = match ? match[1] : 'image/jpeg';
+      const imgBuffer = Buffer.from(parts[1], 'base64');
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      return res.send(imgBuffer);
+    }
+
+    res.sendFile(path.join(__dirname, 'public', 'assets', 'OOH Digital launch poster.png'));
+  });
+});
+
 app.get('/api/media/:filename', (req, res) => {
   const filename = req.params.filename;
 
@@ -205,7 +228,7 @@ app.get('/api/media/:filename', (req, res) => {
       return res.sendFile(localAudioPath);
     }
 
-    res.status(404).send('Media file not found');
+    res.sendFile(path.join(__dirname, 'public', 'assets', 'OOH Digital launch poster.png'));
   });
 });
 

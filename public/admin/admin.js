@@ -384,8 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>Icon: ${escapeHtml(svc.icon)} ${svc.description ? '| ' + escapeHtml(svc.description.slice(0, 50)) + '...' : ''}</p>
               </div>
               <div class="crud-actions">
-                <button class="btn-edit" onclick="editService(${svc.id}, '${escapeHtml(svc.title)}', '${escapeHtml(svc.description || '')}', '${escapeHtml(svc.icon)}')">Edit</button>
-                <button class="btn-delete" onclick="deleteService(${svc.id})">Delete</button>
+                <button class="btn-edit" onclick="editService('${svc.id}', '${escapeHtml(svc.title)}', '${escapeHtml(svc.description || '')}', '${escapeHtml(svc.icon)}')">Edit</button>
+                <button class="btn-delete" onclick="deleteService('${svc.id}')">Delete</button>
               </div>
             </div>
           `;
@@ -589,8 +589,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>Tag: ${escapeHtml(proj.tag)} ${proj.chips ? '| Chips: ' + escapeHtml(proj.chips) : ''}</p>
               </div>
               <div class="crud-actions">
-                <button class="btn-edit" onclick="editProject(${proj.id}, '${escapeHtml(proj.project_index)}', '${escapeHtml(proj.tag)}', '${escapeHtml(proj.title)}', '${escapeHtml(proj.description || '')}', '${escapeHtml(proj.chips || '')}', ${proj.highlight}, '${escapeHtml(proj.music_url || '')}', '${escapeHtml(proj.poster_url || '')}')">Edit</button>
-                <button class="btn-delete" onclick="deleteProject(${proj.id})">Delete</button>
+                <button class="btn-edit" onclick="editProject('${proj.id}', '${escapeHtml(proj.project_index)}', '${escapeHtml(proj.tag)}', '${escapeHtml(proj.title)}', '${escapeHtml(proj.description || '')}', '${escapeHtml(proj.chips || '')}', ${proj.highlight}, '${escapeHtml(proj.music_url || '')}', '${escapeHtml(proj.poster_url || '')}')">Edit</button>
+                <button class="btn-delete" onclick="deleteProject('${proj.id}')">Delete</button>
               </div>
             </div>
           `;
@@ -702,8 +702,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>Role: ${escapeHtml(crd.role)}</p>
               </div>
               <div class="crud-actions">
-                <button class="btn-edit" onclick="editCredit(${crd.id}, '${escapeHtml(crd.title)}', '${escapeHtml(crd.role)}', ${crd.award})">Edit</button>
-                <button class="btn-delete" onclick="deleteCredit(${crd.id})">Delete</button>
+                <button class="btn-edit" onclick="editCredit('${crd.id}', '${escapeHtml(crd.title)}', '${escapeHtml(crd.role)}', ${crd.award})">Edit</button>
+                <button class="btn-delete" onclick="deleteCredit('${crd.id}')">Delete</button>
               </div>
             </div>
           `;
@@ -836,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const rowClass = inq.status === 'unread' ? 'unread' : '';
           const statusLabel = inq.status === 'unread' ? 'Unread' : 'Read';
           const markReadButton = inq.status === 'unread'
-            ? `<button class="btn-edit" onclick="markInquiryRead(${inq.id})">Mark Read</button>`
+            ? `<button class="btn-edit" onclick="markInquiryRead('${inq.id}')">Mark Read</button>`
             : '';
 
           const safeEmail = escapeHtml(inq.email || '');
@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="crud-actions" style="flex-wrap:wrap; gap:6px;">
                   <button type="button" class="btn-reply-email" data-email="${encEmailAttr}" data-name="${encNameAttr}" data-message="${encMessageAttr}" title="Reply to ${safeName} via email">Reply Email ✉</button>
                   ${markReadButton}
-                  <button class="btn-delete" onclick="deleteInquiry(${inq.id})">Delete</button>
+                  <button class="btn-delete" onclick="deleteInquiry('${inq.id}')">Delete</button>
                 </div>
               </td>
             </tr>
@@ -1162,9 +1162,9 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               <div class="crud-actions">
                 <button type="button" class="btn-edit" onclick="previewMusicTrack('${escapeHtml(track.filename)}')">Play</button>
-                <button type="button" class="btn-edit" onclick="toggleMusicActive(${track.id}, ${track.active})">${isActive ? 'Disable' : 'Enable'}</button>
-                <button type="button" class="btn-edit" onclick="editMusicTrack(${track.id}, '${escapeHtml(track.title)}', '${escapeHtml(track.artist)}', '${escapeHtml(track.filename)}', ${track.active})">Edit</button>
-                <button type="button" class="btn-delete" onclick="deleteMusicTrack(${track.id})">Delete</button>
+                <button type="button" class="btn-edit" onclick="toggleMusicActive('${track.id}', ${track.active})">${isActive ? 'Disable' : 'Enable'}</button>
+                <button type="button" class="btn-edit" onclick="editMusicTrack('${track.id}', '${escapeHtml(track.title)}', '${escapeHtml(track.artist)}', '${escapeHtml(track.filename)}', ${track.active})">Edit</button>
+                <button type="button" class="btn-delete" onclick="deleteMusicTrack('${track.id}')">Delete</button>
               </div>
             </div>
           `;
