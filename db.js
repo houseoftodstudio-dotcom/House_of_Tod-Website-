@@ -22,11 +22,6 @@ if (MONGODB_URI) {
 let models = {};
 
 if (isMongo && mongoose) {
-  // Connect to MongoDB Atlas
-  mongoose.connect(MONGODB_URI)
-    .then(() => console.log("Connected successfully to MongoDB Atlas."))
-    .catch(err => console.error("MongoDB Atlas connection error:", err.message));
-
   // Define Schemas
   const AdminUserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
@@ -121,95 +116,127 @@ if (isMongo && mongoose) {
     MusicTrack: mongoose.models.MusicTrack || mongoose.model('MusicTrack', MusicTrackSchema),
     MediaFile: mongoose.models.MediaFile || mongoose.model('MediaFile', MediaFileSchema)
   };
-
-  // Seed MongoDB initial collections if empty
-  const seedMongo = async () => {
-    try {
-      // 1. Seed Admin
-      const adminCount = await models.AdminUser.countDocuments();
-      if (adminCount === 0) {
-        const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
-        const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(defaultPass, salt);
-        await models.AdminUser.create({ username: defaultUser, password_hash: hash });
-        console.log(`Seeded default admin user (${defaultUser}) in MongoDB.`);
-      }
-
-      // 2. Seed Studio Info
-      const studioCount = await models.StudioInfo.countDocuments();
-      if (studioCount === 0) {
-        await models.StudioInfo.create({ id: 1 });
-        console.log("Seeded general studio info in MongoDB.");
-      }
-
-      // 3. Seed Services
-      const servicesCount = await models.Service.countDocuments();
-      if (servicesCount === 0) {
-        const initialServices = [
-          { title: 'Music production', description: '', icon: 'music' },
-          { title: 'Sound design', description: '', icon: 'activity' },
-          { title: 'Audio engineering', description: '', icon: 'volume-2' },
-          { title: 'Live sound', description: '', icon: 'volume-2' },
-          { title: 'Background scores', description: '', icon: 'film' },
-          { title: 'Studio recordings', description: '', icon: 'disc' },
-          { title: 'Mixing mastering', description: '', icon: 'sliders' },
-          { title: 'End to end sound production', description: '', icon: 'headphones' }
-        ];
-        await models.Service.insertMany(initialServices);
-        console.log("Seeded initial services in MongoDB.");
-      }
-
-      // 4. Seed Credits
-      const creditsCount = await models.Credit.countDocuments();
-      if (creditsCount === 0) {
-        const initialCredits = [
-          { title: 'RED FM 93.5', role: 'Sound Engineer', award: 0 },
-          { title: 'Radio Mirchi', role: 'Composer', award: 0 },
-          { title: 'Aadriyano Audio-Film', role: 'IPAR Festival Winner', award: 1 },
-          { title: 'Sadakchaap', role: 'Bassist & Recording Engineer', award: 0 },
-          { title: 'Pune Warriors', role: 'WMPL Anthem', award: 0 },
-          { title: 'Happy Dent', role: 'Ad Film Sound Design', award: 0 }
-        ];
-        await models.Credit.insertMany(initialCredits);
-        console.log("Seeded initial credits in MongoDB.");
-      }
-
-      // 5. Seed Pricing
-      const pricingCount = await models.Pricing.countDocuments();
-      if (pricingCount === 0) {
-        const initialPricing = [
-          { name: 'Studio Session', price: '₹2,500', period: 'hour', description: 'Ideal for dry recording, vocal tracking, and basic instrumentation setups.', features: 'Professional Vocal Booth,High-End Studio Microphones,Dedicated Sound Engineer,Raw Unprocessed WAV Export' },
-          { name: 'Stereo Mix & Master', price: '₹12,000', period: 'track', description: 'Transform your raw multitracks into a polished, industry-standard final product.', features: 'Up to 48 Multitracks,Analog Warmth Processing,Pitch Correction & Alignment,Streaming Ready Masters (Spotify/Apple),2 Revision Rounds Included' },
-          { name: 'Full Sonic Branding', price: '₹45,000', period: 'project', description: 'A complete auditory identity built from scratch for your brand, ad campaign, or podcast.', features: 'Original 3-Second Sonic Logo,30-Second Ad Campaign Theme,Fully Custom Composition,Unlimited Mixing/Mastering Revisions,Commercial Rights Included' }
-        ];
-        await models.Pricing.insertMany(initialPricing);
-        console.log("Seeded initial pricing in MongoDB.");
-      }
-
-      // 6. Seed Music Tracks
-      const musicCount = await models.MusicTrack.countDocuments();
-      if (musicCount === 0) {
-        const now = new Date().toISOString();
-        await models.MusicTrack.create({
-          title: 'Midnight Echo',
-          artist: 'House of Tod',
-          filename: '/uploads/audio/sample_midnight_echo.mp3',
-          duration: 180,
-          display_order: 1,
-          active: 1,
-          created_at: now,
-          updated_at: now
-        });
-        console.log("Seeded initial music track in MongoDB.");
-      }
-    } catch (err) {
-      console.error("Error seeding MongoDB:", err.message);
-    }
-  };
-
-  mongoose.connection.once('open', seedMongo);
 }
+
+// Seed MongoDB initial collections if empty
+const seedMongo = async () => {
+  try {
+    // 1. Seed Admin
+    const adminCount = await models.AdminUser.countDocuments();
+    if (adminCount === 0) {
+      const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+      const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(defaultPass, salt);
+      await models.AdminUser.create({ username: defaultUser, password_hash: hash });
+      console.log(`Seeded default admin user (${defaultUser}) in MongoDB.`);
+    }
+
+    // 2. Seed Studio Info
+    const studioCount = await models.StudioInfo.countDocuments();
+    if (studioCount === 0) {
+      await models.StudioInfo.create({ id: 1 });
+      console.log("Seeded general studio info in MongoDB.");
+    }
+
+    // 3. Seed Services
+    const servicesCount = await models.Service.countDocuments();
+    if (servicesCount === 0) {
+      const initialServices = [
+        { title: 'Music production', description: '', icon: 'music' },
+        { title: 'Sound design', description: '', icon: 'activity' },
+        { title: 'Audio engineering', description: '', icon: 'volume-2' },
+        { title: 'Live sound', description: '', icon: 'volume-2' },
+        { title: 'Background scores', description: '', icon: 'film' },
+        { title: 'Studio recordings', description: '', icon: 'disc' },
+        { title: 'Mixing mastering', description: '', icon: 'sliders' },
+        { title: 'End to end sound production', description: '', icon: 'headphones' }
+      ];
+      await models.Service.insertMany(initialServices);
+      console.log("Seeded initial services in MongoDB.");
+    }
+
+    // 4. Seed Credits
+    const creditsCount = await models.Credit.countDocuments();
+    if (creditsCount === 0) {
+      const initialCredits = [
+        { title: 'RED FM 93.5', role: 'Sound Engineer', award: 0 },
+        { title: 'Radio Mirchi', role: 'Composer', award: 0 },
+        { title: 'Aadriyano Audio-Film', role: 'IPAR Festival Winner', award: 1 },
+        { title: 'Sadakchaap', role: 'Bassist & Recording Engineer', award: 0 },
+        { title: 'Pune Warriors', role: 'WMPL Anthem', award: 0 },
+        { title: 'Happy Dent', role: 'Ad Film Sound Design', award: 0 }
+      ];
+      await models.Credit.insertMany(initialCredits);
+      console.log("Seeded initial credits in MongoDB.");
+    }
+
+    // 5. Seed Pricing
+    const pricingCount = await models.Pricing.countDocuments();
+    if (pricingCount === 0) {
+      const initialPricing = [
+        { name: 'Studio Session', price: '₹2,500', period: 'hour', description: 'Ideal for dry recording, vocal tracking, and basic instrumentation setups.', features: 'Professional Vocal Booth,High-End Studio Microphones,Dedicated Sound Engineer,Raw Unprocessed WAV Export' },
+        { name: 'Stereo Mix & Master', price: '₹12,000', period: 'track', description: 'Transform your raw multitracks into a polished, industry-standard final product.', features: 'Up to 48 Multitracks,Analog Warmth Processing,Pitch Correction & Alignment,Streaming Ready Masters (Spotify/Apple),2 Revision Rounds Included' },
+        { name: 'Full Sonic Branding', price: '₹45,000', period: 'project', description: 'A complete auditory identity built from scratch for your brand, ad campaign, or podcast.', features: 'Original 3-Second Sonic Logo,30-Second Ad Campaign Theme,Fully Custom Composition,Unlimited Mixing/Mastering Revisions,Commercial Rights Included' }
+      ];
+      await models.Pricing.insertMany(initialPricing);
+      console.log("Seeded initial pricing in MongoDB.");
+    }
+
+    // 6. Seed Projects
+    const projectCount = await models.Project.countDocuments();
+    if (projectCount === 0) {
+      const initialProjects = [
+        { project_index: '01', tag: 'Jazz', title: 'Just One More Drink -- Jazz Noir', description: 'A test', chips: 'Prototype', highlight: 1, music_url: 'https://youtu.be/7gtIh5dF9Xk?si=IalfTd8bT9gmu4Le', poster_url: '/uploads/channels4_banner_1784798744026.jpg' },
+        { project_index: '02', tag: 'Podcast', title: 'MIRCHI GULZAR NAAMA', description: 'A tribute to the legend - Gulzar sahab on his birthday !', chips: 'Sound engineer, Mirchi, Pune', highlight: 1, music_url: 'https://gaana.com/podcast/stories/marathi/mirchi-cyber-ki-khabar', poster_url: '/uploads/WhatsApp_Image_2026-07-25_at_10_29_08_PM_1784998825863.jpeg' },
+        { project_index: '03', tag: 'Background Score', title: 'Under tha Jackfruit Tree', description: '', chips: 'Background Score', highlight: 1, music_url: 'https://youtu.be/HIIlfs60rp8?si=bc4ripK5uYvX-5MK', poster_url: '/uploads/1750482660761_1785091477255.avif' },
+        { project_index: '04', tag: 'Music', title: 'R.A.M', description: '', chips: 'Music production', highlight: 1, music_url: 'https://linktr.ee/randomaccessmachinery?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaATQNltwZG9mAmV4dG4DYWVtAjExAHNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp819We_IV0HycmzATkJpxvyrqflLiJmOfwM9yiEYK3iDY3-uytL68qD_NXF0_aem_qrMkoHdz70NHjzjxGtdlfw', poster_url: '/uploads/Of_1785091689340.avif' }
+      ];
+      await models.Project.insertMany(initialProjects);
+      console.log("Seeded initial projects in MongoDB.");
+    }
+
+    // 7. Seed Music Tracks
+    const musicCount = await models.MusicTrack.countDocuments();
+    if (musicCount === 0) {
+      const now = new Date().toISOString();
+      await models.MusicTrack.create({
+        title: 'Midnight Echo',
+        artist: 'House of Tod',
+        filename: '/uploads/audio/sample_midnight_echo.mp3',
+        duration: 180,
+        display_order: 1,
+        active: 1,
+        created_at: now,
+        updated_at: now
+      });
+      console.log("Seeded initial music track in MongoDB.");
+    }
+  } catch (err) {
+    console.error("Error seeding MongoDB:", err.message);
+  }
+};
+
+let connectionPromise = null;
+const ensureConnected = async () => {
+  if (!isMongo || !mongoose) return;
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (!connectionPromise) {
+    connectionPromise = mongoose.connect(MONGODB_URI)
+      .then(async () => {
+        console.log("Connected successfully to MongoDB Atlas.");
+        await seedMongo();
+      })
+      .catch(err => {
+        connectionPromise = null;
+        console.error("MongoDB connection error:", err.message);
+        throw err;
+      });
+  }
+  await connectionPromise;
+};
 
 // Fallback SQLite Database handle (for local offline dev)
 let sqliteDb = null;
@@ -334,7 +361,8 @@ module.exports = {
 
   getStudioInfo: (cb) => {
     if (isMongo) {
-      models.StudioInfo.findOne({ id: 1 })
+      ensureConnected()
+        .then(() => models.StudioInfo.findOne({ id: 1 }))
         .then(info => cb(null, formatDoc(info)))
         .catch(err => cb(err));
     } else {
@@ -344,20 +372,21 @@ module.exports = {
 
   updateStudioInfo: (data, cb) => {
     if (isMongo) {
-      models.StudioInfo.findOneAndUpdate(
-        { id: 1 },
-        {
-          $set: {
-            title: data.title, sub_title: data.sub_title, credo: data.credo,
-            bio_title: data.bio_title, bio_text: data.bio_text, quote_text: data.quote_text,
-            quote_author: data.quote_author, email: data.email, phone_1: data.phone_1,
-            phone_2: data.phone_2, address: data.address, founder_photo: data.founder_photo || '',
-            founder_name: data.founder_name || 'Karan Aherewal', founder_role: data.founder_role || 'Founder, House of Tod',
-            founder_portfolio: data.founder_portfolio || ''
-          }
-        },
-        { upsert: true, new: true }
-      )
+      ensureConnected()
+        .then(() => models.StudioInfo.findOneAndUpdate(
+          { id: 1 },
+          {
+            $set: {
+              title: data.title, sub_title: data.sub_title, credo: data.credo,
+              bio_title: data.bio_title, bio_text: data.bio_text, quote_text: data.quote_text,
+              quote_author: data.quote_author, email: data.email, phone_1: data.phone_1,
+              phone_2: data.phone_2, address: data.address, founder_photo: data.founder_photo || '',
+              founder_name: data.founder_name || 'Karan Aherewal', founder_role: data.founder_role || 'Founder, House of Tod',
+              founder_portfolio: data.founder_portfolio || ''
+            }
+          },
+          { upsert: true, new: true }
+        ))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -379,7 +408,8 @@ module.exports = {
 
   getServices: (cb) => {
     if (isMongo) {
-      models.Service.find().sort({ _id: 1 })
+      ensureConnected()
+        .then(() => models.Service.find().sort({ _id: 1 }))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -389,7 +419,8 @@ module.exports = {
 
   addService: (data, cb) => {
     if (isMongo) {
-      models.Service.create(data)
+      ensureConnected()
+        .then(() => models.Service.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -399,7 +430,8 @@ module.exports = {
 
   updateService: (id, data, cb) => {
     if (isMongo) {
-      models.Service.findByIdAndUpdate(id, { $set: data })
+      ensureConnected()
+        .then(() => models.Service.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -409,7 +441,8 @@ module.exports = {
 
   deleteService: (id, cb) => {
     if (isMongo) {
-      models.Service.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.Service.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -419,7 +452,8 @@ module.exports = {
 
   getCredits: (cb) => {
     if (isMongo) {
-      models.Credit.find().sort({ _id: 1 })
+      ensureConnected()
+        .then(() => models.Credit.find().sort({ _id: 1 }))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -429,7 +463,8 @@ module.exports = {
 
   addCredit: (data, cb) => {
     if (isMongo) {
-      models.Credit.create(data)
+      ensureConnected()
+        .then(() => models.Credit.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -439,7 +474,8 @@ module.exports = {
 
   updateCredit: (id, data, cb) => {
     if (isMongo) {
-      models.Credit.findByIdAndUpdate(id, { $set: data })
+      ensureConnected()
+        .then(() => models.Credit.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -449,7 +485,8 @@ module.exports = {
 
   deleteCredit: (id, cb) => {
     if (isMongo) {
-      models.Credit.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.Credit.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -459,7 +496,8 @@ module.exports = {
 
   getPricing: (cb) => {
     if (isMongo) {
-      models.Pricing.find().sort({ _id: 1 })
+      ensureConnected()
+        .then(() => models.Pricing.find().sort({ _id: 1 }))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -469,7 +507,8 @@ module.exports = {
 
   addPricing: (data, cb) => {
     if (isMongo) {
-      models.Pricing.create(data)
+      ensureConnected()
+        .then(() => models.Pricing.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -479,7 +518,8 @@ module.exports = {
 
   updatePricing: (id, data, cb) => {
     if (isMongo) {
-      models.Pricing.findByIdAndUpdate(id, { $set: data })
+      ensureConnected()
+        .then(() => models.Pricing.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -489,7 +529,8 @@ module.exports = {
 
   deletePricing: (id, cb) => {
     if (isMongo) {
-      models.Pricing.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.Pricing.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -499,7 +540,8 @@ module.exports = {
 
   getInquiries: (cb) => {
     if (isMongo) {
-      models.Inquiry.find().sort({ _id: -1 })
+      ensureConnected()
+        .then(() => models.Inquiry.find().sort({ _id: -1 }))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -511,7 +553,8 @@ module.exports = {
     const now = new Date();
     const formattedDate = now.toISOString().replace('T', ' ').slice(0, 19);
     if (isMongo) {
-      models.Inquiry.create({ ...data, date: formattedDate })
+      ensureConnected()
+        .then(() => models.Inquiry.create({ ...data, date: formattedDate }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -521,7 +564,8 @@ module.exports = {
 
   markInquiryRead: (id, cb) => {
     if (isMongo) {
-      models.Inquiry.findByIdAndUpdate(id, { $set: { status: 'read' } })
+      ensureConnected()
+        .then(() => models.Inquiry.findByIdAndUpdate(id, { $set: { status: 'read' } }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -531,7 +575,8 @@ module.exports = {
 
   deleteInquiry: (id, cb) => {
     if (isMongo) {
-      models.Inquiry.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.Inquiry.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -541,7 +586,8 @@ module.exports = {
 
   verifyAdmin: (username, password, cb) => {
     if (isMongo) {
-      models.AdminUser.findOne({ username })
+      ensureConnected()
+        .then(() => models.AdminUser.findOne({ username }))
         .then(user => {
           if (!user) return cb(null, false);
           const matches = bcrypt.compareSync(password, user.password_hash);
@@ -562,7 +608,8 @@ module.exports = {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(newPassword, salt);
     if (isMongo) {
-      models.AdminUser.findOneAndUpdate({ username }, { $set: { password_hash: hash } })
+      ensureConnected()
+        .then(() => models.AdminUser.findOneAndUpdate({ username }, { $set: { password_hash: hash } }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -572,7 +619,8 @@ module.exports = {
 
   getProjects: (cb) => {
     if (isMongo) {
-      models.Project.find().sort({ _id: 1 })
+      ensureConnected()
+        .then(() => models.Project.find().sort({ _id: 1 }))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -582,7 +630,8 @@ module.exports = {
 
   addProject: (data, cb) => {
     if (isMongo) {
-      models.Project.create(data)
+      ensureConnected()
+        .then(() => models.Project.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -596,7 +645,8 @@ module.exports = {
 
   updateProject: (id, data, cb) => {
     if (isMongo) {
-      models.Project.findByIdAndUpdate(id, { $set: data })
+      ensureConnected()
+        .then(() => models.Project.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -610,7 +660,8 @@ module.exports = {
 
   deleteProject: (id, cb) => {
     if (isMongo) {
-      models.Project.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.Project.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -621,7 +672,8 @@ module.exports = {
   getMusicTracks: (includeInactive, cb) => {
     if (isMongo) {
       const query = includeInactive ? {} : { active: 1 };
-      models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1)
+      ensureConnected()
+        .then(() => models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1))
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
     } else {
@@ -634,7 +686,8 @@ module.exports = {
 
   getMusicTrackById: (id, cb) => {
     if (isMongo) {
-      models.MusicTrack.findById(id)
+      ensureConnected()
+        .then(() => models.MusicTrack.findById(id))
         .then(doc => cb(null, formatDoc(doc)))
         .catch(err => cb(err));
     } else {
@@ -645,7 +698,8 @@ module.exports = {
   addMusicTrack: (data, cb) => {
     const now = new Date().toISOString();
     if (isMongo) {
-      models.MusicTrack.deleteMany({})
+      ensureConnected()
+        .then(() => models.MusicTrack.deleteMany({}))
         .then(() => {
           return models.MusicTrack.create({
             title: data.title,
@@ -695,7 +749,8 @@ module.exports = {
     if (data.filename) updateObj.filename = data.filename;
 
     if (isMongo) {
-      models.MusicTrack.findByIdAndUpdate(id, { $set: updateObj })
+      ensureConnected()
+        .then(() => models.MusicTrack.findByIdAndUpdate(id, { $set: updateObj }))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -709,7 +764,8 @@ module.exports = {
 
   deleteMusicTrack: (id, cb) => {
     if (isMongo) {
-      models.MusicTrack.findByIdAndDelete(id)
+      ensureConnected()
+        .then(() => models.MusicTrack.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -720,10 +776,13 @@ module.exports = {
   reorderMusicTracks: (orderedIds, cb) => {
     if (!Array.isArray(orderedIds) || orderedIds.length === 0) return cb(null);
     if (isMongo) {
-      const promises = orderedIds.map((id, idx) =>
-        models.MusicTrack.findByIdAndUpdate(id, { $set: { display_order: idx + 1 } })
-      );
-      Promise.all(promises)
+      ensureConnected()
+        .then(() => {
+          const promises = orderedIds.map((id, idx) =>
+            models.MusicTrack.findByIdAndUpdate(id, { $set: { display_order: idx + 1 } })
+          );
+          return Promise.all(promises);
+        })
         .then(() => cb(null))
         .catch(err => cb(err));
     } else {
@@ -737,14 +796,14 @@ module.exports = {
     }
   },
 
-  // Media File Storage Helpers for Vercel Serverless File Persistence
   saveMediaFile: (filename, contentType, dataUri, cb) => {
     if (isMongo) {
-      models.MediaFile.findOneAndUpdate(
-        { filename },
-        { $set: { filename, contentType, dataUri, created_at: new Date() } },
-        { upsert: true, new: true }
-      )
+      ensureConnected()
+        .then(() => models.MediaFile.findOneAndUpdate(
+          { filename },
+          { $set: { filename, contentType, dataUri, created_at: new Date() } },
+          { upsert: true, new: true }
+        ))
         .then(file => cb(null, file))
         .catch(err => cb(err));
     } else {
@@ -754,7 +813,8 @@ module.exports = {
 
   getMediaFile: (filename, cb) => {
     if (isMongo) {
-      models.MediaFile.findOne({ filename })
+      ensureConnected()
+        .then(() => models.MediaFile.findOne({ filename }))
         .then(file => cb(null, file))
         .catch(err => cb(err));
     } else {

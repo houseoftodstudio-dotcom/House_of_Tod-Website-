@@ -147,15 +147,23 @@ const requireAuth = (req, res, next) => {
 };
 
 // Route protection for static files
+app.get('/login.html', (req, res) => {
+  res.redirect('/admin/login.html');
+});
+
+app.get('/admin/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'login.html'));
+});
+
 app.get('/admin', (req, res) => {
-  if (!req.session.user) {
+  if (!req.session || !req.session.user) {
     return res.redirect('/admin/login.html');
   }
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
 });
 
 app.get('/admin/index.html', (req, res) => {
-  if (!req.session.user) {
+  if (!req.session || !req.session.user) {
     return res.redirect('/admin/login.html');
   }
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));

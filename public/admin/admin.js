@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.status === 401) {
         showAdminToast("Session expired / Unauthorized. Redirecting to login...", "error");
         setTimeout(() => {
-          window.location.href = 'login.html';
+          window.location.href = '/admin/login.html';
         }, 1500);
         throw new Error("Unauthorized");
       }
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => res.json())
       .then(data => {
         if (!data.loggedIn) {
-          window.location.href = 'login.html';
+          window.location.href = '/admin/login.html';
           return;
         }
         currentSession = data.user;
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(err => {
         console.error("Session check error:", err);
-        window.location.href = 'login.html';
+        window.location.href = '/admin/login.html';
       });
   }
 
@@ -972,10 +972,10 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', () => {
       fetch('/api/logout', { method: 'POST' })
         .then(() => {
-          window.location.href = 'login.html';
+          window.location.href = '/admin/login.html';
         })
         .catch(() => {
-          window.location.href = 'login.html';
+          window.location.href = '/admin/login.html';
         });
     });
   }
