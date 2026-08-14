@@ -1206,6 +1206,53 @@ img {
   margin-top: 12px;
 }
 
+/* Light Section 3D Service Cards Effect */
+.section.light .svc-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-radius: var(--border-radius-md);
+  padding: 38px 32px;
+  color: var(--black);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.section.light .svc-card .svc-icon {
+  background: #09090b;
+  border-color: #09090b;
+}
+
+.section.light .svc-card .svc-icon svg {
+  stroke: #ffffff;
+}
+
+.section.light .svc-card h3 {
+  color: var(--black);
+}
+
+.section.light .svc-card p {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.section.light .svc-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  border-color: rgba(221, 75, 57, 0.4);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(221, 75, 57, 0.12);
+}
+
+.section.light .svc-card.active,
+.section.light .svc-card.expanded {
+  border-color: var(--coral);
+  box-shadow: 0 24px 50px rgba(221, 75, 57, 0.18), 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.section.light .svc-card:hover .svc-icon {
+  background: var(--coral);
+  border-color: var(--coral);
+  transform: rotate(12deg) scale(1.08);
+}
+
 /* ---------- PROCESS ---------- */
 .process-wrap {
   position: relative;
