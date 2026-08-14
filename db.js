@@ -140,14 +140,14 @@ const seedMongo = async () => {
     const servicesCount = await models.Service.countDocuments();
     if (servicesCount === 0) {
       const initialServices = [
-        { title: 'Music production', description: '', icon: 'music' },
-        { title: 'Sound design', description: '', icon: 'activity' },
-        { title: 'Audio engineering', description: '', icon: 'volume-2' },
-        { title: 'Live sound', description: '', icon: 'volume-2' },
-        { title: 'Background scores', description: '', icon: 'film' },
-        { title: 'Studio recordings', description: '', icon: 'disc' },
-        { title: 'Mixing mastering', description: '', icon: 'sliders' },
-        { title: 'End to end sound production', description: '', icon: 'headphones' }
+        { title: 'Music production', description: 'Original musical scores, sonic branding, and custom compositions.', icon: 'music' },
+        { title: 'Sound design', description: 'Custom soundscapes, Foley, and audio effects for ads, film, and media.', icon: 'activity' },
+        { title: 'Audio engineering', description: 'Technical precision across every stage of audio production.', icon: 'volume-2' },
+        { title: 'Live sound', description: 'High-impact live audio setup, acoustics, and stage engineering.', icon: 'volume-2' },
+        { title: 'Background scores', description: 'Immersive cinematic scoring that elevates visual storytelling.', icon: 'film' },
+        { title: 'Studio recordings', description: 'High-fidelity multitrack recording in acoustically treated space.', icon: 'disc' },
+        { title: 'Mixing mastering', description: 'Industry-standard stereo & spatial audio balancing for release.', icon: 'sliders' },
+        { title: 'End to end sound production', description: 'Full-spectrum audio production under one roof from concept to master.', icon: 'headphones' }
       ];
       await models.Service.insertMany(initialServices);
       console.log("Seeded initial services in MongoDB.");

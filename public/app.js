@@ -585,9 +585,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
 
-          const descText = svc.description ? svc.description.trim() : '';
+          const defaultDescs = {
+            'Audio engineering': 'Technical precision across every stage of audio production.',
+            'Audio Engineering': 'Technical precision across every stage of audio production.',
+            'Sound design': 'Custom soundscapes, Foley, and audio effects for ads, film, and media.',
+            'Sound Design': 'Custom soundscapes, Foley, and audio effects for ads, film, and media.',
+            'Music production': 'Original musical scores, sonic branding, and custom compositions.',
+            'Music Production': 'Original musical scores, sonic branding, and custom compositions.',
+            'Music Composition': 'Original musical scores, sonic branding, and custom compositions.',
+            'Background scores': 'Immersive cinematic scoring that elevates visual storytelling.',
+            'Background Scores': 'Immersive cinematic scoring that elevates visual storytelling.',
+            'Mixing mastering': 'Industry-standard stereo & spatial audio balancing for release.',
+            'Mixing & Mastering': 'Industry-standard stereo & spatial audio balancing for release.',
+            'Studio recordings': 'High-fidelity multitrack recording in acoustically treated space.',
+            'Recordings': 'High-fidelity multitrack recording in acoustically treated space.',
+            'Voice Overs': 'Professional voice recording, dubbing, and voiceover direction.',
+            'Live sound': 'High-impact live audio setup, acoustics, and stage engineering.',
+            'End to end sound production': 'Full-spectrum audio production under one roof from concept to master.',
+            'Full Productions': 'Full-spectrum audio production under one roof from concept to master.'
+          };
+
+          const descText = (svc.description && svc.description.trim()) || defaultDescs[svc.title] || defaultDescs[svc.title ? svc.title.trim() : ''] || '';
           const descHtml = descText ? `<p class="svc-desc">${escapeHtml(descText)}</p>` : '';
-          const chevronHtml = descText ? `<div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>` : '';
+          const chevronHtml = `<div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>`;
 
           container.innerHTML += `
             <div class="svc-card${descText ? ' has-desc' : ''}" tabindex="0" role="button" aria-expanded="false">
