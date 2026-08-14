@@ -3,6 +3,8 @@ node_modules/
 
 # Local Environment Variables
 .env
+.env.example
+.env.*
 
 # Local SQLite Database
 database.sqlite
