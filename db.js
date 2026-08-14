@@ -13,7 +13,7 @@ if (MONGODB_URI) {
     mongoose = require('mongoose');
     isMongo = true;
   } catch (e) {
-    console.warn("Mongoose module not loaded, falling back to SQLite:", e.message);
+    console.warn("Mongoose module not loaded:", e.message);
     isMongo = false;
   }
 }
@@ -121,7 +121,6 @@ if (isMongo && mongoose) {
 // Seed MongoDB initial collections if empty
 const seedMongo = async () => {
   try {
-    // 1. Seed Admin
     const adminCount = await models.AdminUser.countDocuments();
     if (adminCount === 0) {
       const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
@@ -132,14 +131,12 @@ const seedMongo = async () => {
       console.log(`Seeded default admin user (${defaultUser}) in MongoDB.`);
     }
 
-    // 2. Seed Studio Info
     const studioCount = await models.StudioInfo.countDocuments();
     if (studioCount === 0) {
       await models.StudioInfo.create({ id: 1 });
       console.log("Seeded general studio info in MongoDB.");
     }
 
-    // 3. Seed Services
     const servicesCount = await models.Service.countDocuments();
     if (servicesCount === 0) {
       const initialServices = [
@@ -156,7 +153,6 @@ const seedMongo = async () => {
       console.log("Seeded initial services in MongoDB.");
     }
 
-    // 4. Seed Credits
     const creditsCount = await models.Credit.countDocuments();
     if (creditsCount === 0) {
       const initialCredits = [
@@ -171,7 +167,6 @@ const seedMongo = async () => {
       console.log("Seeded initial credits in MongoDB.");
     }
 
-    // 5. Seed Pricing
     const pricingCount = await models.Pricing.countDocuments();
     if (pricingCount === 0) {
       const initialPricing = [
@@ -183,7 +178,6 @@ const seedMongo = async () => {
       console.log("Seeded initial pricing in MongoDB.");
     }
 
-    // 6. Seed Projects
     const projectCount = await models.Project.countDocuments();
     if (projectCount === 0) {
       const initialProjects = [
@@ -196,7 +190,6 @@ const seedMongo = async () => {
       console.log("Seeded initial projects in MongoDB.");
     }
 
-    // 7. Seed Music Tracks
     const musicCount = await models.MusicTrack.countDocuments();
     if (musicCount === 0) {
       const now = new Date().toISOString();
@@ -224,7 +217,9 @@ const ensureConnected = async () => {
     return;
   }
   if (!connectionPromise) {
-    connectionPromise = mongoose.connect(MONGODB_URI)
+    connectionPromise = mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000
+    })
       .then(async () => {
         console.log("Connected successfully to MongoDB Atlas.");
         await seedMongo();
@@ -232,112 +227,115 @@ const ensureConnected = async () => {
       .catch(err => {
         connectionPromise = null;
         console.error("MongoDB connection error:", err.message);
-        throw err;
       });
   }
-  await connectionPromise;
+  try {
+    await connectionPromise;
+  } catch (e) {}
 };
 
 // Fallback SQLite Database handle (for local offline dev)
 let sqliteDb = null;
 if (!isMongo) {
-  const sqlite3 = require('sqlite3').verbose();
-  const dbPath = path.resolve(__dirname, 'database.sqlite');
-  sqliteDb = new sqlite3.Database(dbPath);
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const dbPath = path.resolve(__dirname, 'database.sqlite');
+    sqliteDb = new sqlite3.Database(dbPath);
 
-  sqliteDb.serialize(() => {
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS admin_users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password_hash TEXT
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS studio_info (
-        id INTEGER PRIMARY KEY,
-        title TEXT, sub_title TEXT, credo TEXT, bio_title TEXT, bio_text TEXT,
-        quote_text TEXT, quote_author TEXT, email TEXT, phone_1 TEXT, phone_2 TEXT,
-        address TEXT, founder_photo TEXT, founder_name TEXT, founder_role TEXT, founder_portfolio TEXT
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS services (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT, description TEXT, icon TEXT
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS credits (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT, role TEXT, award INTEGER DEFAULT 0
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS pricing (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT, price TEXT, period TEXT, description TEXT, features TEXT
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS inquiries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT, email TEXT, phone TEXT, message TEXT, date TEXT, status TEXT DEFAULT 'unread'
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        project_index TEXT, tag TEXT, title TEXT, description TEXT, chips TEXT, highlight INTEGER DEFAULT 0, music_url TEXT, poster_url TEXT
-      )
-    `);
-    sqliteDb.run(`
-      CREATE TABLE IF NOT EXISTS music_tracks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL, artist TEXT NOT NULL, filename TEXT NOT NULL, duration INTEGER DEFAULT 0,
-        display_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    sqliteDb.serialize(() => {
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS admin_users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE,
+          password_hash TEXT
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS studio_info (
+          id INTEGER PRIMARY KEY,
+          title TEXT, sub_title TEXT, credo TEXT, bio_title TEXT, bio_text TEXT,
+          quote_text TEXT, quote_author TEXT, email TEXT, phone_1 TEXT, phone_2 TEXT,
+          address TEXT, founder_photo TEXT, founder_name TEXT, founder_role TEXT, founder_portfolio TEXT
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS services (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT, description TEXT, icon TEXT
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS credits (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT, role TEXT, award INTEGER DEFAULT 0
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS pricing (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT, price TEXT, period TEXT, description TEXT, features TEXT
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS inquiries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT, email TEXT, phone TEXT, message TEXT, date TEXT, status TEXT DEFAULT 'unread'
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS projects (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_index TEXT, tag TEXT, title TEXT, description TEXT, chips TEXT, highlight INTEGER DEFAULT 0, music_url TEXT, poster_url TEXT
+        )
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS music_tracks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL, artist TEXT NOT NULL, filename TEXT NOT NULL, duration INTEGER DEFAULT 0,
+          display_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-    // Seed SQLite Admin
-    sqliteDb.get("SELECT COUNT(*) as count FROM admin_users", [], (err, row) => {
-      if (!err && row.count === 0) {
-        const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
-        const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(defaultPass, salt);
-        sqliteDb.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", [defaultUser, hash]);
-      }
+      sqliteDb.get("SELECT COUNT(*) as count FROM admin_users", [], (err, row) => {
+        if (!err && row && row.count === 0) {
+          const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+          const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
+          const salt = bcrypt.genSaltSync(10);
+          const hash = bcrypt.hashSync(defaultPass, salt);
+          sqliteDb.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", [defaultUser, hash]);
+        }
+      });
+
+      sqliteDb.get("SELECT COUNT(*) as count FROM studio_info", [], (err, row) => {
+        if (!err && row && row.count === 0) {
+          sqliteDb.run(`
+            INSERT INTO studio_info (
+              id, title, sub_title, credo, bio_title, bio_text, quote_text, quote_author, email, phone_1, phone_2, address, founder_photo, founder_name, founder_role, founder_portfolio
+            ) VALUES (
+              1, 
+              'SOUND THAT STAYS. LONG AFTER THE CAMPAIGN ENDS.',
+              'We craft brand identities, ad campaigns, and sound design engineered for memory — not just attention.',
+              '"We don''t make noise. We make memory."',
+              'House of Tod',
+              'A budget-friendly production studio out of Pune, built around one belief: in a world of fast, disposable content, the brands that win are the ones that stay in people''s heads. We craft brand identities, ad campaigns, and sounds engineered for memory — not just attention.',
+              'We build sound design and brand identities that stay with people — long after the campaign ends.',
+              'Karan Aherewal, Founder',
+              'houseoftod.studio@gmail.com',
+              '+91 94035 40578',
+              '+91 95615 91601',
+              'Pune, Maharashtra',
+              'https://static.wixstatic.com/media/686f69_5519b8c692cf495a8491124abd5e105e~mv2.png/v1/crop/x_698,y_1688,w_1738,h_2344/fill/w_480,h_647,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9213_heic.png',
+              'Karan Aherewal',
+              'Founder, House of Tod',
+              '#'
+            )
+          `);
+        }
+      });
     });
-
-    // Seed SQLite Studio Info
-    sqliteDb.get("SELECT COUNT(*) as count FROM studio_info", [], (err, row) => {
-      if (!err && row.count === 0) {
-        sqliteDb.run(`
-          INSERT INTO studio_info (
-            id, title, sub_title, credo, bio_title, bio_text, quote_text, quote_author, email, phone_1, phone_2, address, founder_photo, founder_name, founder_role, founder_portfolio
-          ) VALUES (
-            1, 
-            'SOUND THAT STAYS. LONG AFTER THE CAMPAIGN ENDS.',
-            'We craft brand identities, ad campaigns, and sound design engineered for memory — not just attention.',
-            '"We don''t make noise. We make memory."',
-            'House of Tod',
-            'A budget-friendly production studio out of Pune, built around one belief: in a world of fast, disposable content, the brands that win are the ones that stay in people''s heads. We craft brand identities, ad campaigns, and sounds engineered for memory — not just attention.',
-            'We build sound design and brand identities that stay with people — long after the campaign ends.',
-            'Karan Aherewal, Founder',
-            'houseoftod.studio@gmail.com',
-            '+91 94035 40578',
-            '+91 95615 91601',
-            'Pune, Maharashtra',
-            'https://static.wixstatic.com/media/686f69_5519b8c692cf495a8491124abd5e105e~mv2.png/v1/crop/x_698,y_1688,w_1738,h_2344/fill/w_480,h_647,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9213_heic.png',
-            'Karan Aherewal',
-            'Founder, House of Tod',
-            '#'
-          )
-        `);
-      }
-    });
-  });
+  } catch (sqliteErr) {
+    console.warn("SQLite initialization bypassed on serverless platform:", sqliteErr.message);
+  }
 }
 
 // Helper to normalize Mongo document `_id` to `id` string
@@ -362,11 +360,13 @@ module.exports = {
   getStudioInfo: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.StudioInfo.findOne({ id: 1 }))
+        .then(() => models.StudioInfo ? models.StudioInfo.findOne({ id: 1 }) : null)
         .then(info => cb(null, formatDoc(info)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.get("SELECT * FROM studio_info WHERE id = 1", [], cb);
+    } else {
+      cb(null, null);
     }
   },
 
@@ -389,7 +389,7 @@ module.exports = {
         ))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run(
         `UPDATE studio_info SET 
           title = ?, sub_title = ?, credo = ?, bio_title = ?, bio_text = ?, 
@@ -403,17 +403,21 @@ module.exports = {
         ],
         cb
       );
+    } else {
+      cb(null);
     }
   },
 
   getServices: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.Service.find().sort({ _id: 1 }))
+        .then(() => models.Service ? models.Service.find().sort({ _id: 1 }) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.all("SELECT * FROM services ORDER BY id ASC", [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
@@ -423,8 +427,10 @@ module.exports = {
         .then(() => models.Service.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("INSERT INTO services (title, description, icon) VALUES (?, ?, ?)", [data.title, data.description, data.icon], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -434,8 +440,10 @@ module.exports = {
         .then(() => models.Service.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("UPDATE services SET title = ?, description = ?, icon = ? WHERE id = ?", [data.title, data.description, data.icon, id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -445,19 +453,23 @@ module.exports = {
         .then(() => models.Service.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM services WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
   getCredits: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.Credit.find().sort({ _id: 1 }))
+        .then(() => models.Credit ? models.Credit.find().sort({ _id: 1 }) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.all("SELECT * FROM credits ORDER BY id ASC", [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
@@ -467,8 +479,10 @@ module.exports = {
         .then(() => models.Credit.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("INSERT INTO credits (title, role, award) VALUES (?, ?, ?)", [data.title, data.role, data.award], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -478,8 +492,10 @@ module.exports = {
         .then(() => models.Credit.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("UPDATE credits SET title = ?, role = ?, award = ? WHERE id = ?", [data.title, data.role, data.award, id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -489,19 +505,23 @@ module.exports = {
         .then(() => models.Credit.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM credits WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
   getPricing: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.Pricing.find().sort({ _id: 1 }))
+        .then(() => models.Pricing ? models.Pricing.find().sort({ _id: 1 }) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.all("SELECT * FROM pricing ORDER BY id ASC", [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
@@ -511,8 +531,10 @@ module.exports = {
         .then(() => models.Pricing.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("INSERT INTO pricing (name, price, period, description, features) VALUES (?, ?, ?, ?, ?)", [data.name, data.price, data.period, data.description, data.features], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -522,8 +544,10 @@ module.exports = {
         .then(() => models.Pricing.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("UPDATE pricing SET name = ?, price = ?, period = ?, description = ?, features = ? WHERE id = ?", [data.name, data.price, data.period, data.description, data.features, id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -533,19 +557,23 @@ module.exports = {
         .then(() => models.Pricing.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM pricing WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
   getInquiries: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.Inquiry.find().sort({ _id: -1 }))
+        .then(() => models.Inquiry ? models.Inquiry.find().sort({ _id: -1 }) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.all("SELECT * FROM inquiries ORDER BY id DESC", [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
@@ -557,8 +585,10 @@ module.exports = {
         .then(() => models.Inquiry.create({ ...data, date: formattedDate }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("INSERT INTO inquiries (name, email, phone, message, date) VALUES (?, ?, ?, ?, ?)", [data.name, data.email, data.phone, data.message, formattedDate], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -568,8 +598,10 @@ module.exports = {
         .then(() => models.Inquiry.findByIdAndUpdate(id, { $set: { status: 'read' } }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("UPDATE inquiries SET status = 'read' WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -579,28 +611,32 @@ module.exports = {
         .then(() => models.Inquiry.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM inquiries WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
   verifyAdmin: (username, password, cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.AdminUser.findOne({ username }))
+        .then(() => models.AdminUser ? models.AdminUser.findOne({ username }) : null)
         .then(user => {
           if (!user) return cb(null, false);
           const matches = bcrypt.compareSync(password, user.password_hash);
           cb(null, matches ? formatDoc(user) : false);
         })
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.get("SELECT * FROM admin_users WHERE username = ?", [username], (err, user) => {
         if (err) return cb(err);
         if (!user) return cb(null, false);
         const matches = bcrypt.compareSync(password, user.password_hash);
         cb(null, matches ? user : false);
       });
+    } else {
+      cb(null, false);
     }
   },
 
@@ -612,19 +648,23 @@ module.exports = {
         .then(() => models.AdminUser.findOneAndUpdate({ username }, { $set: { password_hash: hash } }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("UPDATE admin_users SET password_hash = ? WHERE username = ?", [hash, username], cb);
+    } else {
+      cb(null);
     }
   },
 
   getProjects: (cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.Project.find().sort({ _id: 1 }))
+        .then(() => models.Project ? models.Project.find().sort({ _id: 1 }) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.all("SELECT * FROM projects ORDER BY id ASC", [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
@@ -634,12 +674,14 @@ module.exports = {
         .then(() => models.Project.create(data))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run(
         "INSERT INTO projects (project_index, tag, title, description, chips, highlight, music_url, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [data.project_index, data.tag, data.title, data.description || '', data.chips || '', data.highlight || 0, data.music_url || '', data.poster_url || ''],
         cb
       );
+    } else {
+      cb(null);
     }
   },
 
@@ -649,12 +691,14 @@ module.exports = {
         .then(() => models.Project.findByIdAndUpdate(id, { $set: data }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run(
         "UPDATE projects SET project_index = ?, tag = ?, title = ?, description = ?, chips = ?, highlight = ?, music_url = ?, poster_url = ? WHERE id = ?",
         [data.project_index, data.tag, data.title, data.description || '', data.chips || '', data.highlight || 0, data.music_url || '', data.poster_url || '', id],
         cb
       );
+    } else {
+      cb(null);
     }
   },
 
@@ -664,8 +708,10 @@ module.exports = {
         .then(() => models.Project.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM projects WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -673,25 +719,29 @@ module.exports = {
     if (isMongo) {
       const query = includeInactive ? {} : { active: 1 };
       ensureConnected()
-        .then(() => models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1))
+        .then(() => models.MusicTrack ? models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1) : [])
         .then(docs => cb(null, formatDocs(docs)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       const sql = includeInactive
         ? "SELECT * FROM music_tracks ORDER BY display_order ASC, id ASC"
         : "SELECT * FROM music_tracks WHERE active = 1 ORDER BY display_order ASC, id ASC LIMIT 1";
       sqliteDb.all(sql, [], cb);
+    } else {
+      cb(null, []);
     }
   },
 
   getMusicTrackById: (id, cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.MusicTrack.findById(id))
+        .then(() => models.MusicTrack ? models.MusicTrack.findById(id) : null)
         .then(doc => cb(null, formatDoc(doc)))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.get("SELECT * FROM music_tracks WHERE id = ?", [id], cb);
+    } else {
+      cb(null, null);
     }
   },
 
@@ -714,7 +764,7 @@ module.exports = {
         })
         .then(created => cb(null, { id: created._id.toString() }))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM music_tracks", [], (delErr) => {
         if (delErr) return cb(delErr);
         sqliteDb.run(
@@ -735,6 +785,8 @@ module.exports = {
           }
         );
       });
+    } else {
+      cb(null, { id: "1" });
     }
   },
 
@@ -753,12 +805,14 @@ module.exports = {
         .then(() => models.MusicTrack.findByIdAndUpdate(id, { $set: updateObj }))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run(
         "UPDATE music_tracks SET title = ?, artist = ?, filename = COALESCE(NULLIF(?, ''), filename), active = ?, updated_at = ? WHERE id = ?",
         [data.title, data.artist, data.filename || '', data.active !== undefined ? data.active : 1, now, id],
         cb
       );
+    } else {
+      cb(null);
     }
   },
 
@@ -768,8 +822,10 @@ module.exports = {
         .then(() => models.MusicTrack.findByIdAndDelete(id))
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.run("DELETE FROM music_tracks WHERE id = ?", [id], cb);
+    } else {
+      cb(null);
     }
   },
 
@@ -785,7 +841,7 @@ module.exports = {
         })
         .then(() => cb(null))
         .catch(err => cb(err));
-    } else {
+    } else if (sqliteDb) {
       sqliteDb.serialize(() => {
         const stmt = sqliteDb.prepare("UPDATE music_tracks SET display_order = ? WHERE id = ?");
         orderedIds.forEach((id, idx) => {
@@ -793,17 +849,19 @@ module.exports = {
         });
         stmt.finalize(cb);
       });
+    } else {
+      cb(null);
     }
   },
 
   saveMediaFile: (filename, contentType, dataUri, cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.MediaFile.findOneAndUpdate(
+        .then(() => models.MediaFile ? models.MediaFile.findOneAndUpdate(
           { filename },
           { $set: { filename, contentType, dataUri, created_at: new Date() } },
           { upsert: true, new: true }
-        ))
+        ) : null)
         .then(file => cb(null, file))
         .catch(err => cb(err));
     } else {
@@ -814,7 +872,7 @@ module.exports = {
   getMediaFile: (filename, cb) => {
     if (isMongo) {
       ensureConnected()
-        .then(() => models.MediaFile.findOne({ filename }))
+        .then(() => models.MediaFile ? models.MediaFile.findOne({ filename }) : null)
         .then(file => cb(null, file))
         .catch(err => cb(err));
     } else {

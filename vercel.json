@@ -2,7 +2,19 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/admin",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/login.html",
       "destination": "/server.js"
     }
   ]
