@@ -68,12 +68,18 @@ const sessionConfig = {
   }
 };
 
-if (db.isMongo && db.mongoose && db.mongoose.connection) {
-  sessionConfig.store = MongoStore.create({
-    client: db.mongoose.connection.getClient(),
-    collectionName: 'sessions',
-    ttl: 30 * 24 * 60 * 60 // 30 days
-  });
+const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
+
+if (MONGODB_URI) {
+  try {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: MONGODB_URI,
+      collectionName: 'sessions',
+      ttl: 30 * 24 * 60 * 60 // 30 days
+    });
+  } catch (sessionErr) {
+    console.warn("MongoStore initialization bypassed:", sessionErr.message);
+  }
 }
 
 app.use(session(sessionConfig));
@@ -754,6 +760,11 @@ app.post('/api/music/reorder', requireAuth, (req, res) => {
     }
     res.json({ success: true, message: 'Playlist reordered successfully' });
   });
+});
+
+// Catch-all route to serve static index.html for frontend navigation
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Export app for Vercel Serverless Function deployment
