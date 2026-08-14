@@ -13,7 +13,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "mongodb": "^7.5.0",
+    "mongodb": "^6.8.0",
     "mongoose": "^8.5.2",
     "multer": "^2.2.0",
     "sqlite3": "^5.1.7"
