@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMS Dashboard — House of Tod</title>
+  <link rel="icon" type="image/png" href="/assets/LOGO.png">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+
+<body class="db-body">
+
+  <!-- Admin Toast Container -->
+  <div id="admin-toast-container" class="admin-toast-container" aria-live="polite"></div>
+
+  <!-- Glowing Decorative Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <div class="db-container">
+    <!-- Sidebar -->
+    <aside class="db-sidebar" id="db-sidebar">
+      <div class="sidebar-brand">
+        <img src="../assets/LOGO.png" alt="House of Tod Logo" class="rotating-logo">
+        <div class="brand-text">
+          <h2>House of Tod</h2>
+          <span>CMS Control Panel</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="tab-btn active" data-panel="panel-general">
+          <span class="tab-label">About / General</span>
+        </button>
+        <button class="tab-btn" data-panel="panel-services">
+          <span class="tab-label">Services CMS</span>
+        </button>
+        <button class="tab-btn" data-panel="panel-projects">
+          <span class="tab-label">Projects CMS</span>
+        </button>
+        <button class="tab-btn" data-panel="panel-music">
+          <span class="tab-label">Music Manager</span>
+        </button>
+
+        <button class="tab-btn" data-panel="panel-founder">
+          <span class="tab-label">Founder Info</span>
+        </button>
+        <button class="tab-btn" data-panel="panel-credits">
+          <span class="tab-label">Credits &amp; Awards</span>
+        </button>
+        <button class="tab-btn" data-panel="panel-inquiries">
+          <span class="tab-label">Inquiries</span> <span id="unread-count-badge" class="badge-unread"
+            style="display:none;">0</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">A</div>
+          <div class="user-details">
+            <span class="user-name" id="logged-user-display">admin</span>
+            <span class="user-role">Administrator</span>
+          </div>
+        </div>
+        <div class="sidebar-actions">
+          <button class="btn-sidebar-action" id="btn-open-pw-modal" title="Change Password">Password</button>
+          <button class="btn-sidebar-action btn-logout" id="btn-logout" title="Logout">Logout</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="db-main-content">
+      <!-- Content Top Header -->
+      <header class="content-header">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">
+          <span></span><span></span><span></span>
+        </button>
+        <h1 class="header-title" id="current-panel-title">General Studio Info</h1>
+      </header>
+
+      <!-- Dashboard Wrapper (inner content) -->
+      <div class="db-wrapper">
+
+        <!-- GENERAL SETTINGS PANEL -->
+        <div class="db-panel active" id="panel-general">
+          <h3 class="panel-title">General Studio &amp; About Information</h3>
+          <form id="general-info-form">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top:20px;">
+              <div class="form-group">
+                <label for="gen-bio-title">About Section Bio Heading</label>
+                <input type="text" id="gen-bio-title" required>
+              </div>
+              <div class="form-group">
+                <label for="gen-quote-author">Pull Quote Author / Citation</label>
+                <input type="text" id="gen-quote-author" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="gen-bio-text">Studio Bio Text Block</label>
+              <textarea id="gen-bio-text" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="gen-quote-text">Pull Quote Text</label>
+              <textarea id="gen-quote-text" rows="2" required></textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top:20px;">
+              <div class="form-group">
+                <label for="gen-email">Contact Email</label>
+                <input type="email" id="gen-email" required>
+              </div>
+              <div class="form-group">
+                <label for="gen-phone-1">Contact Phone 1</label>
+                <input type="text" id="gen-phone-1" required>
+              </div>
+              <div class="form-group">
+                <label for="gen-phone-2">Contact Phone 2 (Optional)</label>
+                <input type="text" id="gen-phone-2">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="gen-address">Studio Address / Location</label>
+              <input type="text" id="gen-address" required>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-save">Save General Info Changes</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SERVICES CMS PANEL -->
+        <div class="db-panel" id="panel-services">
+          <div class="panel-grid">
+            <!-- Editor Form -->
+            <div>
+              <h3 class="panel-title" id="service-form-title">Add New Service</h3>
+              <form id="service-editor-form">
+                <input type="hidden" id="service-id">
+                <div class="form-group">
+                  <label for="service-title">Service Title</label>
+                  <input type="text" id="service-title" required placeholder="e.g. Mixing & Mastering">
+                </div>
+                <div class="form-group">
+                  <label for="service-desc">Description</label>
+                  <textarea id="service-desc" rows="3" placeholder="e.g. Studio grade polish..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="service-icon">SVG Icon Selection</label>
+                  <select id="service-icon">
+                    <option value="volume-2">Volume / Engineering (volume-2)</option>
+                    <option value="activity">Wave / Sound Design (activity)</option>
+                    <option value="music">Note / Composition (music)</option>
+                    <option value="film">Film / Scoring (film)</option>
+                    <option value="sliders">Sliders / Mixing (sliders)</option>
+                    <option value="mic">Microphone / Voice (mic)</option>
+                    <option value="disc">Vinyl / Recording (disc)</option>
+                    <option value="headphones">Headphones / Full Production (headphones)</option>
+                  </select>
+                </div>
+                <div class="form-group"
+                  style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+                  <label for="service-svg-file" style="margin-bottom: 6px;">Or Upload Custom SVG File from Local
+                    Disk</label>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="service-svg-file" accept=".svg" style="font-size:12px;">
+                    <button type="button" class="btn-sidebar-action" id="btn-upload-svg"
+                      style="white-space:nowrap; padding: 8px 14px;">Upload SVG</button>
+                  </div>
+                  <span id="svg-upload-status"
+                    style="font-size:11px; color:var(--text-dim); margin-top:4px; display:block;"></span>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn-cancel" id="btn-reset-service">Clear / New</button>
+                  <button type="submit" class="btn-save" id="btn-save-service">Add Service</button>
+                </div>
+              </form>
+            </div>
+            <!-- List -->
+            <div>
+              <h3 class="panel-title">Existing Services</h3>
+              <div class="crud-list" id="services-list-container">
+                <!-- Populated via Javascript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECTS CMS PANEL -->
+        <div class="db-panel" id="panel-projects">
+          <div class="panel-grid">
+            <!-- Editor Form -->
+            <div>
+              <h3 class="panel-title" id="project-form-title">Add New Music / Project</h3>
+
+              <!-- Live Website Card Preview Container -->
+              <div class="project-preview-wrapper"
+                style="margin-bottom: 24px; padding: 18px; background: rgba(0,0,0,0.35); border: 1px dashed rgba(228,115,100,0.35); border-radius: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span
+                    style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--coral);">
+                    Live Website Card Preview (Before Saving)
+                  </span>
+                  <span style="font-size:11px; color:var(--text-dim);">Updates as you type</span>
+                </div>
+                <div id="project-preview-card-container">
+                  <!-- Dynamic live preview content -->
+                </div>
+              </div>
+
+              <form id="project-editor-form">
+                <input type="hidden" id="project-id">
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 16px;">
+                  <div class="form-group">
+                    <label for="project-index">Index (e.g. 01, 02)</label>
+                    <input type="text" id="project-index" required placeholder="01">
+                  </div>
+                  <div class="form-group">
+                    <label for="project-tag">Tag / Category</label>
+                    <input type="text" id="project-tag" required placeholder="e.g. SPOTIFY SINGLE, AD CAMPAIGN">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="project-title">Project / Song Title</label>
+                  <input type="text" id="project-title" required placeholder="e.g. RED FM Anthem or Spotify Track">
+                </div>
+                <div class="form-group">
+                  <label for="project-music-url">Spotify / Online Music Link (URL)</label>
+                  <input type="url" id="project-music-url"
+                    placeholder="https://open.spotify.com/track/... or YouTube link">
+                </div>
+                <div class="form-group">
+                  <label for="project-poster-url">Music Poster Image URL / Path</label>
+                  <input type="text" id="project-poster-url" placeholder="https://... or click upload below">
+                </div>
+                <div class="form-group"
+                  style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+                  <label for="project-poster-file" style="margin-bottom: 6px;">Upload Music Poster Image from
+                    Computer</label>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="project-poster-file" accept="image/*" style="font-size:12px;">
+                    <button type="button" class="btn-sidebar-action" id="btn-upload-poster"
+                      style="white-space:nowrap; padding: 8px 14px;">Upload Image</button>
+                  </div>
+                  <span id="poster-upload-status"
+                    style="font-size:11px; color:var(--text-dim); margin-top:4px; display:block;"></span>
+                </div>
+                <div class="form-group">
+                  <label for="project-desc">Description</label>
+                  <textarea id="project-desc" rows="3" placeholder="Brief summary of the project..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="project-chips">Chips / Tags (Comma-separated)</label>
+                  <input type="text" id="project-chips" placeholder="e.g. Sound Engineering, Music Production, Mix">
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:10px;">
+                  <input type="checkbox" id="project-highlight" style="width:auto; height:auto; cursor:pointer;">
+                  <label for="project-highlight" style="margin-bottom:0; cursor:pointer;">Highlight Card (Glow Border &
+                    Award Tag)</label>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn-cancel" id="btn-reset-project">Clear / New</button>
+                  <button type="submit" class="btn-save" id="btn-save-project">Add Project</button>
+                </div>
+              </form>
+            </div>
+            <!-- List -->
+            <div>
+              <h3 class="panel-title">Selected Projects Catalog</h3>
+              <div class="crud-list" id="projects-list-container">
+                <!-- Populated via Javascript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOUNDER INFO PANEL -->
+        <div class="db-panel" id="panel-founder">
+          <h3 class="panel-title">Founder Details &amp; Personal Portfolio</h3>
+          <form id="founder-info-form">
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+              <div class="form-group">
+                <label for="founder-name">Founder Full Name</label>
+                <input type="text" id="founder-name" required placeholder="Karan Aherewal">
+              </div>
+              <div class="form-group">
+                <label for="founder-role">Founder Title / Role</label>
+                <input type="text" id="founder-role" required placeholder="Founder, House of Tod">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 15px;">
+              <label for="founder-portfolio">Founder Personal Portfolio Link (URL)</label>
+              <input type="url" id="founder-portfolio"
+                placeholder="https://karanaherewal.com or your portfolio website link">
+            </div>
+
+            <div class="form-group">
+              <label for="founder-photo-url">Founder Photo Image URL / Path</label>
+              <input type="text" id="founder-photo-url" placeholder="https://... or upload photo below">
+            </div>
+
+            <div class="form-group"
+              style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+              <label for="founder-photo-file" style="margin-bottom: 6px;">Upload Founder Photo from Local Disk</label>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <input type="file" id="founder-photo-file" accept="image/*" style="font-size:12px;">
+                <button type="button" class="btn-sidebar-action" id="btn-upload-founder-photo"
+                  style="white-space:nowrap; padding: 8px 14px;">Upload Photo</button>
+              </div>
+              <span id="founder-photo-status"
+                style="font-size:11px; color:var(--text-dim); margin-top:4px; display:block;"></span>
+            </div>
+
+            <div class="form-actions" style="margin-top: 20px;">
+              <button type="submit" class="btn-save">Save Founder Info</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- CREDITS CMS PANEL -->
+        <div class="db-panel" id="panel-credits">
+          <div class="panel-grid">
+            <!-- Editor Form -->
+            <div>
+              <h3 class="panel-title" id="credit-form-title">Add Selected Credit</h3>
+              <form id="credit-editor-form">
+                <input type="hidden" id="credit-id">
+                <div class="form-group">
+                  <label for="credit-title">Client / Project Title</label>
+                  <input type="text" id="credit-title" required placeholder="e.g. RED FM 93.5">
+                </div>
+                <div class="form-group">
+                  <label for="credit-role">Role / Project description</label>
+                  <input type="text" id="credit-role" required placeholder="e.g. Composer or Sound Design">
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:10px;">
+                  <input type="checkbox" id="credit-award" style="width:auto; height:auto; cursor:pointer;">
+                  <label for="credit-award" style="margin-bottom:0; cursor:pointer;">Display as Award / IPAR Winner
+                    Highlight</label>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn-cancel" id="btn-reset-credit">Clear / New</button>
+                  <button type="submit" class="btn-save" id="btn-save-credit">Add Credit</button>
+                </div>
+              </form>
+            </div>
+            <!-- List -->
+            <div>
+              <h3 class="panel-title">Credits List</h3>
+              <div class="crud-list" id="credits-list-container">
+                <!-- Populated via Javascript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- MUSIC MANAGER PANEL -->
+        <div class="db-panel" id="panel-music">
+          <div class="panel-grid">
+            <!-- Editor Form -->
+            <div>
+              <h3 class="panel-title" id="music-form-title">Set Website Background Music Track</h3>
+              <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px;">Only one background music track is active and loops continuously on the main website.</p>
+              <form id="music-editor-form">
+                <input type="hidden" id="music-id">
+                <div class="form-group">
+                  <label for="music-title">Song / Track Title *</label>
+                  <input type="text" id="music-title" required placeholder="e.g. Midnight Echo">
+                </div>
+                <div class="form-group">
+                  <label for="music-artist">Artist Name *</label>
+                  <input type="text" id="music-artist" required placeholder="e.g. House of Tod">
+                </div>
+
+                <div class="form-group"
+                  style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px dashed rgba(221,75,57,0.3);">
+                  <label for="music-file-input" style="margin-bottom: 8px; font-weight:700; color:var(--coral);">Upload
+                    Audio File (MP3, WAV, M4A, OGG, MPEG, FLAC, AAC - Max 100MB) *</label>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="file" id="music-file-input"
+                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.aac,.mpeg,.mpga,.wma,.aiff,.opus,.webm"
+                      style="font-size:12px; flex:1;">
+                    <button type="button" class="btn-sidebar-action" id="btn-upload-audio"
+                      style="white-space:nowrap; padding: 9px 16px; background:var(--coral); color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Upload
+                      Audio</button>
+                  </div>
+                  <span id="music-upload-status"
+                    style="font-size:12px; color:var(--text-dim); margin-top:6px; display:block;"></span>
+                </div>
+
+                <div class="form-group">
+                  <label for="music-filename-url">Audio File URL / Path</label>
+                  <input type="text" id="music-filename-url" required
+                    placeholder="/uploads/audio/... or click upload above">
+                </div>
+
+                <!-- Audio Preview Player -->
+                <div class="form-group" id="admin-audio-preview-wrap"
+                  style="display:none; background:rgba(0,0,0,0.4); padding:14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                  <label
+                    style="margin-bottom:8px; color:var(--coral); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;">Audio
+                    Track Preview</label>
+                  <audio id="admin-audio-preview" controls style="width:100%; height:36px; outline:none;"></audio>
+                </div>
+
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:10px; margin-top:10px;">
+                  <input type="checkbox" id="music-active" checked style="width:auto; height:auto; cursor:pointer;">
+                  <label for="music-active" style="margin-bottom:0; cursor:pointer; font-weight:600;">Enable Track on Website</label>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn-cancel" id="btn-reset-music">Clear / New</button>
+                  <button type="submit" class="btn-save" id="btn-save-music">Save Background Track</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- List & Reorder -->
+            <div>
+              <h3 class="panel-title">Active Background Track</h3>
+              <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px;"></p>
+              <div class="crud-list" id="music-list-container">
+                <!-- Populated via Javascript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INQUIRIES PANEL -->
+        <div class="db-panel" id="panel-inquiries">
+
+          <h3 class="panel-title">Client Inquiries &amp; Messages Inbox</h3>
+          <div class="inquiries-table-container">
+            <table class="inquiries-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Contact Details</th>
+                  <th>Message Brief</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inquiries-table-body">
+                <!-- Populated via Javascript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div> <!-- db-wrapper -->
+    </main> <!-- db-main-content -->
+  </div> <!-- db-container -->
+
+  <!-- PASSWORD CHANGE MODAL -->
+  <div class="modal" id="pw-modal">
+    <div class="modal-content">
+      <h3>Change Password</h3>
+      <form id="pw-change-form">
+        <div class="form-group">
+          <label for="new-pw">New Password (Min 6 chars)</label>
+          <input type="password" id="new-pw" required minlength="6" placeholder="Enter new password">
+        </div>
+        <div class="form-group">
+          <label for="confirm-pw">Confirm Password</label>
+          <input type="password" id="confirm-pw" required placeholder="Re-enter to confirm">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" id="btn-close-pw-modal">Cancel</button>
+          <button type="submit" class="btn-save">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/admin/admin.js"></script>
+</body>
+
+</html>

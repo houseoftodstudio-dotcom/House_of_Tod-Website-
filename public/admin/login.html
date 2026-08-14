@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — House of Tod</title>
+  <link rel="icon" type="image/png" href="/assets/LOGO.png">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body class="login-body">
+
+  <!-- Glowing Decorative Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/assets/LOGO.png" alt="House of Tod Logo" class="rotating-logo">
+        <h1>House of Tod</h1>
+        <p>Studio CMS Control Panel</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" required placeholder="Enter admin username" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-input-wrap" style="position: relative; width: 100%;">
+            <input type="password" id="password" required placeholder="Enter admin password" autocomplete="current-password" style="width: 100%; padding-right: 48px;">
+            <button type="button" id="toggle-pw-btn" class="toggle-pw-btn" aria-label="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; padding: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+              Show
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 16px;">
+          <input type="checkbox" id="remember-me" style="width: auto; height: auto; cursor: pointer;">
+          <label for="remember-me" style="font-size: 13px; font-weight: 500; text-transform: none; margin-bottom: 0; cursor: pointer; color: rgba(255,255,255,0.75);">Keep me logged in</label>
+        </div>
+        <button type="submit" class="btn-submit" id="btn-login">Access Dashboard</button>
+        <div id="login-error" class="login-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('login-form');
+      const errorMsg = document.getElementById('login-error');
+      const submitBtn = document.getElementById('btn-login');
+      const togglePwBtn = document.getElementById('toggle-pw-btn');
+      const passwordInput = document.getElementById('password');
+
+      if (togglePwBtn && passwordInput) {
+        togglePwBtn.addEventListener('click', () => {
+          const isPw = passwordInput.type === 'password';
+          passwordInput.type = isPw ? 'text' : 'password';
+          togglePwBtn.innerText = isPw ? 'Hide' : 'Show';
+        });
+      }
+
+      // Check if already logged in via backend session
+      fetch('/api/session')
+        .then(res => res.json())
+        .then(data => {
+          if (data.loggedIn) {
+            window.location.href = 'index.html';
+          }
+        })
+        .catch(err => console.error('Session check error:', err));
+
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('remember-me').checked;
+        
+        errorMsg.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Verifying...';
+
+        fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password, rememberMe })
+        })
+        .then(res => res.json().then(data => ({ status: res.status, data })))
+        .then(({ status, data }) => {
+          if (status === 200 && data.success) {
+            window.location.href = 'index.html';
+          } else {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Access Dashboard';
+            errorMsg.innerText = data.error || 'Invalid credentials. Please try again.';
+            errorMsg.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error('Login request error:', err);
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Access Dashboard';
+          errorMsg.innerText = 'Network error connecting to server.';
+          errorMsg.style.display = 'block';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

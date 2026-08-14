@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="House of Tod — Ready-to-deploy Audio & Sound Production Studio in Pune. Crafting brand audio, sound design, and scores engineered for memory.">
+  <title>House of Tod — Audio &amp; Sound Production Studio, Pune</title>
+  <link rel="icon" type="image/png" href="assets/LOGO.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Fullscreen Studio Splash Screen -->
+  <div id="splash-screen" class="splash-screen">
+    <video id="splash-video" class="splash-video" autoplay loop muted playsinline preload="auto">
+      <source src="House of tod vertical.mp4" type="video/mp4" media="(max-width: 768px)">
+      <source src="Hero.mp4" type="video/mp4">
+    </video>
+    <div class="splash-overlay"></div>
+    <div class="splash-content">
+      <div class="splash-brand">
+        <img src="assets/LOGO.png" alt="House of Tod Logo" class="splash-logo">
+        <span class="splash-eyebrow">Audio &amp; Sound Production Studio</span>
+      </div>
+      <button id="enter-studio-btn" class="splash-btn-glass" aria-label="Enter the Studio">
+        <span class="splash-btn-text">Enter the Studio</span>
+        <svg class="splash-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Noise Background Overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Ambient depth (motion-enhanced) -->
+  <div class="ambient-field" aria-hidden="true">
+    <div class="ambient-blob ambient-blob--1"></div>
+    <div class="ambient-blob ambient-blob--2"></div>
+    <div class="ambient-glow"></div>
+  </div>
+
+  <!-- Toast Container for Notifications -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Navigation -->
+  <nav id="nav">
+    <a href="#hero" class="nav-logo" id="nav-logo-link">
+      <img src="assets/LOGO.png" alt="House of Tod Logo" id="logo-img">
+    </a>
+    <div class="nav-links" id="desktop-links">
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#process">Process</a>
+      <a href="#projects">Projects</a>
+      <a href="#founder">Founder</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="nav-cta">
+      <a href="javascript:void(0)" class="btn btn-fill" id="start-project-nav-btn">Start a Project</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- Mobile Menu Panel -->
+  <div id="mobile-menu" aria-hidden="true">
+    <button id="close-menu" aria-label="Close navigation menu">&times;</button>
+    <a href="#about">About</a>
+    <a href="#services">Services</a>
+    <a href="#process">Process</a>
+    <a href="#projects">Projects</a>
+    <a href="#founder">Founder</a>
+    <a href="#contact">Contact</a>
+    <a href="javascript:void(0)" class="btn btn-fill" id="start-project-mobile-btn">Start a Project</a>
+  </div>
+
+  <!-- Vinyl Player Audio Engine (hidden) -->
+  <audio id="vinyl-audio" loop preload="auto" crossorigin="anonymous" style="display:none;"></audio>
+  <audio id="vinyl-sfx-stop" src="/assets/vinyl-stop.mp3" preload="auto" style="display:none;"></audio>
+
+  <!-- Floating Fixed Mute / Unmute Button for Background Music -->
+  <button id="floating-music-toggle" class="floating-music-btn" aria-label="Toggle Background Music">
+    <svg id="music-icon-unmuted" class="music-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+    <svg id="music-icon-muted" class="music-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <line x1="23" y1="9" x2="17" y2="15"></line>
+      <line x1="17" y1="9" x2="23" y2="15"></line>
+    </svg>
+    <span id="music-toggle-text">MUSIC ON</span>
+  </button>
+
+  <!-- Hero Section (Pure Video) -->
+  <section id="hero" class="hero-video-section">
+    <!-- Glitch-free looping background video -->
+    <video
+      id="hero-bg-video"
+      class="hero-bg-video"
+      autoplay
+      loop
+      muted
+      playsinline
+      preload="auto"
+      aria-hidden="true"
+    >
+      <source src="House of tod vertical.mp4" type="video/mp4" media="(max-width: 768px)">
+      <source src="Hero.mp4" type="video/mp4">
+    </video>
+
+    <!-- Subtle dark tint so it stays minimal -->
+    <div class="hero-video-tint" aria-hidden="true"></div>
+
+    <!-- Hidden OLED ghost elements kept so JS audio engine doesn't break -->
+    <div style="display:none;" aria-hidden="true">
+      <img id="hero-frog-mark" src="assets/LOGO.png" alt="">
+      <div id="oled-turntable-display">
+        <span id="oled-status-label"></span>
+        <span id="oled-track-title"></span>
+        <span id="oled-track-artist"></span>
+      </div>
+    </div>
+
+    <!-- Scroll cue -->
+    <div class="scroll-cue"><span>Scroll</span><span class="stick"></span></div>
+  </section>
+
+  <!-- The Landscape Section -->
+  <section class="section light" id="about">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">The Landscape</span>
+        <h2>Everyone is making content.<br>Almost nothing is memorable.</h2>
+        <p>Brands are pumping out short, fast-paced content every single day. The volume is higher than ever — and the
+          recall is lower than ever. Visuals get scrolled past in seconds. But sound lingers. A score, a sonic identity,
+          a voice — these are what people remember after the screen goes dark.</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num count-up" data-target="94" data-suffix="%">0%</div>
+          <div class="stat-label">of viewers forget visual-only ads within 24 hours.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">Recall</div>
+          <div class="stat-label">Sound &amp; Music are processed and stored by the brain far longer than image alone.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who We Are Section -->
+  <section class="section dark">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Who We Are</span>
+        <h2 id="about-bio-title">House of Tod</h2>
+        <p id="about-bio-text">A budget-friendly production studio out of Pune, built around one belief: in a world of
+          fast, disposable content, the brands that win are the ones that stay in people's heads. We craft brand
+          identities, ad campaigns, and sounds engineered for memory — not just attention.</p>
+      </div>
+      <div class="chips-row reveal">
+        <div class="chip"><span class="chip-num">Pune</span><span class="chip-label">Based In</span></div>
+        <div class="chip"><span class="chip-num count-up" data-target="360" data-suffix="°">0°</span><span
+            class="chip-label">Audio Solutions</span></div>
+        <div class="chip"><span class="chip-num count-up" data-target="7" data-suffix="+">0+</span><span
+            class="chip-label">Years Experience</span></div>
+      </div>
+      <blockquote class="pull-quote reveal">
+        <span id="about-quote-text">"We build sound design and brand identities that stay with people — long after the
+          campaign ends."</span>
+        <cite id="about-quote-author">— Karan Aherewal, Founder</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="section light" id="services">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">What We Do</span>
+        <h2>Complete Audio Solutions</h2>
+        <p>Full-spectrum audio production under one roof — no juggling vendors, no compromise on craft.</p>
+      </div>
+
+      <!-- Services Grid -->
+      <div class="svc-grid reveal" id="services-container">
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M9 18V5l11-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="17" cy="16" r="3" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Music production</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Sound design</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Audio engineering</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Live sound</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                <line x1="7" y1="2" x2="7" y2="22" />
+                <line x1="17" y1="2" x2="17" y2="22" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <line x1="2" y1="7" x2="7" y2="7" />
+                <line x1="2" y1="17" x2="7" y2="17" />
+                <line x1="17" y1="17" x2="22" y2="17" />
+                <line x1="17" y1="7" x2="22" y2="7" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Background scores</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Studio recordings</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>Mixing mastering</h3>
+        </div>
+
+        <div class="svc-card" tabindex="0" role="button" aria-expanded="false">
+          <div class="svc-card-top">
+            <div class="svc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                <path
+                  d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+              </svg>
+            </div>
+            <div class="svc-arrow"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg></div>
+          </div>
+          <h3>End to end sound production</h3>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Process Section -->
+  <section class="section light" id="process" style="background: var(--mist);">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">How We Work</span>
+        <h2>Our Process</h2>
+        <p>Five stages, one studio, zero hand-offs — from first brief to final master.</p>
+      </div>
+      <div class="process-wrap reveal">
+        <div class="process-wave" aria-hidden="true">
+          <svg viewBox="0 0 1000 40" preserveAspectRatio="none">
+            <path d="M0,20 C 80,6 170,6 250,20 C 330,34 420,34 500,20 C 580,6 670,6 750,20 C 830,34 920,34 1000,20"
+              fill="none" stroke="var(--coral)" stroke-width="1.5" opacity="0.35" />
+          </svg>
+        </div>
+        <div class="process-grid">
+          <div class="proc-step">
+            <div class="proc-num">01</div>
+            <h3>Brief &amp; Discovery</h3>
+            <p>We understand your brand, goals, and the emotion you want sound to carry.</p>
+          </div>
+          <div class="proc-step">
+            <div class="proc-num">02</div>
+            <h3>Concept &amp; Direction</h3>
+            <p>We propose sonic direction — mood boards in sound, before full production.</p>
+          </div>
+          <div class="proc-step">
+            <div class="proc-num">03</div>
+            <h3>Production</h3>
+            <p>Composition, recording, sound design — built to spec, on milestone.</p>
+          </div>
+          <div class="proc-step">
+            <div class="proc-num">04</div>
+            <h3>Refinement</h3>
+            <p>Mixing, mastering, and revision rounds until it's exactly right.</p>
+          </div>
+          <div class="proc-step">
+            <div class="proc-num">05</div>
+            <h3>Delivery</h3>
+            <p>Final masters delivered in every format your campaign needs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Us Section -->
+  <section class="section dark">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Why House of Tod</span>
+        <h2>The Difference</h2>
+      </div>
+      <div class="why-grid reveal">
+        <div class="why-card">
+          <h3>Budget-Friendly, Studio Quality</h3>
+          <p>Professional-grade audio production without the inflated agency price tag.</p>
+        </div>
+        <div class="why-card">
+          <h3>Built for Recall, Not Just Reach</h3>
+          <p>Every sound decision is made to maximize how long your brand stays remembered.</p>
+        </div>
+        <div class="why-card">
+          <h3>Full-Spectrum Audio Under One Roof</h3>
+          <p>From composition to mastering — no juggling multiple vendors or studios.</p>
+        </div>
+        <div class="why-card">
+          <h3>Founder-Led, Detail-Obsessed</h3>
+          <p>Direct access to the person crafting your sound, start to finish.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section class="section light" id="projects">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Our Work</span>
+        <h2>Selected Projects</h2>
+        <p>A snapshot of the sound we've shaped — brand campaigns, live productions, original compositions, and
+          award-winning work.</p>
+      </div>
+
+      <div class="projects-grid reveal" id="projects-container">
+        <!-- Dynamically loaded from DB -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Founder Section -->
+  <section class="section dark" id="founder">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Who's Behind The Sound</span>
+        <h2>The Founder</h2>
+      </div>
+
+      <div class="founder-grid reveal">
+        <div class="founder-photo-wrap">
+          <img class="founder-photo"
+            src="https://static.wixstatic.com/media/686f69_5519b8c692cf495a8491124abd5e105e~mv2.png/v1/crop/x_698,y_1688,w_1738,h_2344/fill/w_480,h_647,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9213_heic.png"
+            alt="Karan Aherewal, Founder of House of Tod" loading="lazy" id="founder-photo-img">
+          <div class="founder-ring" id="ring-container">
+            <img src="assets/LOGO.png" alt="Frog Mark logo">
+          </div>
+        </div>
+        <div>
+          <h3 class="founder-name" id="founder-name-text">Karan Aherewal</h3>
+          <span class="founder-role" id="founder-role-text">Founder, House of Tod</span>
+          <div class="founder-bio" id="founder-bio-container">
+            <p>Some people tell stories with words. Karan tells them with sound.</p>
+            <p>Over the last seven years, he's worked across radio, podcasts, films, theatre, branded content, original
+              composition, and live performance—using music and sound as tools to shape emotion, build atmosphere, and
+              create unforgettable experiences.</p>
+            <p>As a producer, composer, sound designer, and bassist, he thrives where creativity meets precision. Every
+              project begins with the same question: What should this make people feel? The answer becomes the
+              soundtrack.</p>
+            <p>Because long after people forget what they saw, they remember how it made them feel.</p>
+          </div>
+          <div id="founder-portfolio-wrap" style="margin-top: 15px; margin-bottom: 25px; display: none;">
+            <a href="#" target="_blank" rel="noopener" class="btn btn-outline" id="founder-portfolio-link">Explore
+              Personal Portfolio →</a>
+          </div>
+
+          <div class="credit-label">Selected Work &amp; Credits</div>
+          <!-- Dynamic Credits Container -->
+          <div class="credit-chips" id="credits-container">
+            <!-- Dynamically populated. Fallback: -->
+            <span class="credit-chip">RED FM 93.5 — Sound Engineer</span>
+            <span class="credit-chip">Radio Mirchi — Composer</span>
+            <span class="credit-chip award">Aadriyano Audio-Film — IPAR Festival Winner</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Beyond Audio Section -->
+  <section class="section dark" id="soon">
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <span class="eyebrow">Looking Ahead</span>
+        <h2>Beyond Audio</h2>
+        <p>House of Tod is expanding into a full creative production house. Audio is where we started — and where our
+          craft runs deepest. Soon, we'll offer the full picture.</p>
+      </div>
+      <div class="soon-grid reveal">
+        <div class="soon-card">
+          <span class="soon-tag">Soon</span>
+          <h3>Graphic Design</h3>
+          <p>Visual identity to match your sonic identity.</p>
+        </div>
+        <div class="soon-card">
+          <span class="soon-tag">Soon</span>
+          <h3>Video Production</h3>
+          <p>Shoots, edits, and campaign films.</p>
+        </div>
+        <div class="soon-card">
+          <span class="soon-tag">Soon</span>
+          <h3>Full Productions</h3>
+          <p>End-to-end creative campaigns, one studio.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Contact Section -->
+  <section class="section dark" id="contact">
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <span class="eyebrow">Let's Talk</span>
+        <h2 class="contact-title">Let's Make Something Unforgettable.</h2>
+        <p class="contact-sub">Tell us about your project — we'll get back within 24 hours.</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <span class="clabel">Email</span>
+          <a href="mailto:houseoftod.studio@gmail.com" id="email-link" class="cval">houseoftod.studio@gmail.com</a>
+        </div>
+        <div class="contact-card">
+          <span class="clabel">Phone</span>
+          <span class="cval">
+            <a href="tel:+919403540578" id="phone-link-1">+91 94035 40578</a>
+          </span>
+        </div>
+        <div class="contact-card">
+          <span class="clabel">Studio</span>
+          <span class="cval" id="contact-address">Pune, Maharashtra</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap foot-wrap">
+      <div class="foot-logo">
+        <img src="assets/LOGO.png" alt="House of Tod logo">
+        <span>House of Tod</span>
+      </div>
+      <div class="foot-right">© 2026 House of Tod. Sound that stays.</div>
+    </div>
+  </footer>
+
+  <!-- START A PROJECT MODAL POPUP -->
+  <div class="project-modal" id="project-modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+    <div class="project-modal-backdrop" id="project-modal-backdrop"></div>
+    <div class="project-modal-container" data-lenis-prevent>
+      <button class="project-modal-close" id="project-modal-close" aria-label="Close modal">&times;</button>
+      <div class="project-modal-header">
+        <span class="eyebrow">Let's Create</span>
+        <h2 id="modal-title">Start a Project</h2>
+        <p>Tell us about your project vision or audio needs — we'll get back within 24 hours.</p>
+      </div>
+      <form id="modal-project-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="modal-name">Name *</label>
+            <input type="text" id="modal-name" required placeholder="Your full name">
+          </div>
+          <div class="form-group">
+            <label for="modal-email">Email *</label>
+            <input type="email" id="modal-email" required placeholder="Your email address">
+          </div>
+          <div class="form-group">
+            <label for="modal-phone">Phone (Optional)</label>
+            <input type="tel" id="modal-phone" placeholder="Your contact number">
+          </div>
+          <div class="form-group">
+            <label for="modal-service">Required Service (Optional)</label>
+            <select id="modal-service">
+              <option value="">Select a service category</option>
+              <option value="Music production">Music production</option>
+              <option value="Sound design">Sound design</option>
+              <option value="Audio engineering">Audio engineering</option>
+              <option value="Live sound">Live sound</option>
+              <option value="Background scores">Background scores</option>
+              <option value="Studio recordings">Studio recordings</option>
+              <option value="Mixing mastering">Mixing mastering</option>
+              <option value="End to end sound production">End to end sound production</option>
+              <option value="Other">Other / Full Project</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="modal-message">Project Brief / Details *</label>
+            <textarea id="modal-message" required rows="4"
+              placeholder="Describe your project, deadlines, or sonic goals..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-fill form-submit-btn" id="modal-form-submit">Submit Project Brief</button>
+        <div class="form-status" id="modal-status-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
