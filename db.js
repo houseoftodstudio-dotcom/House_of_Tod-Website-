@@ -105,6 +105,9 @@ if (isMongo && mongoose) {
     created_at: { type: Date, default: Date.now }
   });
 
+  MusicTrackSchema.index({ active: 1, display_order: 1 });
+  InquirySchema.index({ status: 1, date: -1 });
+
   models = {
     AdminUser: mongoose.models.AdminUser || mongoose.model('AdminUser', AdminUserSchema),
     StudioInfo: mongoose.models.StudioInfo || mongoose.model('StudioInfo', StudioInfoSchema),
@@ -121,10 +124,10 @@ if (isMongo && mongoose) {
 // Seed MongoDB initial collections if empty
 const seedMongo = async () => {
   try {
+    const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+    const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
     const adminCount = await models.AdminUser.countDocuments();
     if (adminCount === 0) {
-      const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
-      const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(defaultPass, salt);
       await models.AdminUser.create({ username: defaultUser, password_hash: hash });
@@ -226,7 +229,7 @@ const ensureConnected = async () => {
       })
       .catch(err => {
         connectionPromise = null;
-        console.error("MongoDB connection error:", err.message);
+        console.warn("MongoDB connection warning:", err.message);
       });
   }
   try {
@@ -234,109 +237,119 @@ const ensureConnected = async () => {
   } catch (e) {}
 };
 
-// Fallback SQLite Database handle (for local offline dev)
-let sqliteDb = null;
-if (!isMongo) {
-  try {
-    const sqlite3 = require('sqlite3').verbose();
-    const dbPath = path.resolve(__dirname, 'database.sqlite');
-    sqliteDb = new sqlite3.Database(dbPath);
-
-    sqliteDb.serialize(() => {
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS admin_users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT UNIQUE,
-          password_hash TEXT
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS studio_info (
-          id INTEGER PRIMARY KEY,
-          title TEXT, sub_title TEXT, credo TEXT, bio_title TEXT, bio_text TEXT,
-          quote_text TEXT, quote_author TEXT, email TEXT, phone_1 TEXT, phone_2 TEXT,
-          address TEXT, founder_photo TEXT, founder_name TEXT, founder_role TEXT, founder_portfolio TEXT
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS services (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT, description TEXT, icon TEXT
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS credits (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT, role TEXT, award INTEGER DEFAULT 0
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS pricing (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT, price TEXT, period TEXT, description TEXT, features TEXT
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS inquiries (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT, email TEXT, phone TEXT, message TEXT, date TEXT, status TEXT DEFAULT 'unread'
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS projects (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          project_index TEXT, tag TEXT, title TEXT, description TEXT, chips TEXT, highlight INTEGER DEFAULT 0, music_url TEXT, poster_url TEXT
-        )
-      `);
-      sqliteDb.run(`
-        CREATE TABLE IF NOT EXISTS music_tracks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL, artist TEXT NOT NULL, filename TEXT NOT NULL, duration INTEGER DEFAULT 0,
-          display_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      sqliteDb.get("SELECT COUNT(*) as count FROM admin_users", [], (err, row) => {
-        if (!err && row && row.count === 0) {
-          const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
-          const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
-          const salt = bcrypt.genSaltSync(10);
-          const hash = bcrypt.hashSync(defaultPass, salt);
-          sqliteDb.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", [defaultUser, hash]);
-        }
-      });
-
-      sqliteDb.get("SELECT COUNT(*) as count FROM studio_info", [], (err, row) => {
-        if (!err && row && row.count === 0) {
-          sqliteDb.run(`
-            INSERT INTO studio_info (
-              id, title, sub_title, credo, bio_title, bio_text, quote_text, quote_author, email, phone_1, phone_2, address, founder_photo, founder_name, founder_role, founder_portfolio
-            ) VALUES (
-              1, 
-              'SOUND THAT STAYS. LONG AFTER THE CAMPAIGN ENDS.',
-              'We craft brand identities, ad campaigns, and sound design engineered for memory — not just attention.',
-              '"We don''t make noise. We make memory."',
-              'House of Tod',
-              'A budget-friendly production studio out of Pune, built around one belief: in a world of fast, disposable content, the brands that win are the ones that stay in people''s heads. We craft brand identities, ad campaigns, and sounds engineered for memory — not just attention.',
-              'We build sound design and brand identities that stay with people — long after the campaign ends.',
-              'Karan Aherewal, Founder',
-              'houseoftod.studio@gmail.com',
-              '+91 94035 40578',
-              '+91 95615 91601',
-              'Pune, Maharashtra',
-              'https://static.wixstatic.com/media/686f69_5519b8c692cf495a8491124abd5e105e~mv2.png/v1/crop/x_698,y_1688,w_1738,h_2344/fill/w_480,h_647,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9213_heic.png',
-              'Karan Aherewal',
-              'Founder, House of Tod',
-              '#'
-            )
-          `);
-        }
-      });
-    });
-  } catch (sqliteErr) {
-    console.warn("SQLite initialization bypassed on serverless platform:", sqliteErr.message);
-  }
+// Eagerly initiate MongoDB connection on startup
+if (isMongo && mongoose) {
+  ensureConnected();
 }
+
+// Always initialize SQLite Database as a failover fallback
+let sqliteDb = null;
+try {
+  const sqlite3 = require('sqlite3').verbose();
+  const dbPath = path.resolve(__dirname, 'database.sqlite');
+  sqliteDb = new sqlite3.Database(dbPath);
+
+  sqliteDb.serialize(() => {
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password_hash TEXT
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS studio_info (
+        id INTEGER PRIMARY KEY,
+        title TEXT, sub_title TEXT, credo TEXT, bio_title TEXT, bio_text TEXT,
+        quote_text TEXT, quote_author TEXT, email TEXT, phone_1 TEXT, phone_2 TEXT,
+        address TEXT, founder_photo TEXT, founder_name TEXT, founder_role TEXT, founder_portfolio TEXT
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT, description TEXT, icon TEXT
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS credits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT, role TEXT, award INTEGER DEFAULT 0
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS pricing (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT, price TEXT, period TEXT, description TEXT, features TEXT
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT, email TEXT, phone TEXT, message TEXT, date TEXT, status TEXT DEFAULT 'unread'
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_index TEXT, tag TEXT, title TEXT, description TEXT, chips TEXT, highlight INTEGER DEFAULT 0, music_url TEXT, poster_url TEXT
+      )
+    `);
+    sqliteDb.run(`
+      CREATE TABLE IF NOT EXISTS music_tracks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL, artist TEXT NOT NULL, filename TEXT NOT NULL, duration INTEGER DEFAULT 0,
+        display_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    sqliteDb.get("SELECT COUNT(*) as count FROM admin_users", [], (err, row) => {
+      if (!err && row && row.count === 0) {
+        const defaultUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+        const defaultPass = process.env.ADMIN_DEFAULT_PASS || 'admin123';
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(defaultPass, salt);
+        sqliteDb.run("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", [defaultUser, hash]);
+      }
+    });
+
+    sqliteDb.get("SELECT COUNT(*) as count FROM studio_info", [], (err, row) => {
+      if (!err && row && row.count === 0) {
+        sqliteDb.run(`
+          INSERT INTO studio_info (
+            id, title, sub_title, credo, bio_title, bio_text, quote_text, quote_author, email, phone_1, phone_2, address, founder_photo, founder_name, founder_role, founder_portfolio
+          ) VALUES (
+            1, 
+            'SOUND THAT STAYS. LONG AFTER THE CAMPAIGN ENDS.',
+            'We craft brand identities, ad campaigns, and sound design engineered for memory — not just attention.',
+            '"We don''t make noise. We make memory."',
+            'House of Tod',
+            'A budget-friendly production studio out of Pune, built around one belief: in a world of fast, disposable content, the brands that win are the ones that stay in people''s heads. We craft brand identities, ad campaigns, and sounds engineered for memory — not just attention.',
+            'We build sound design and brand identities that stay with people — long after the campaign ends.',
+            'Karan Aherewal, Founder',
+            'houseoftod.studio@gmail.com',
+            '+91 94035 40578',
+            '+91 95615 91601',
+            'Pune, Maharashtra',
+            'https://static.wixstatic.com/media/686f69_5519b8c692cf495a8491124abd5e105e~mv2.png/v1/crop/x_698,y_1688,w_1738,h_2344/fill/w_480,h_647,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_9213_heic.png',
+            'Karan Aherewal',
+            'Founder, House of Tod',
+            '#'
+          )
+        `);
+      }
+    });
+  });
+} catch (sqliteErr) {
+  console.warn("SQLite initialization error:", sqliteErr.message);
+}
+
+// Helper to check if string is a 24-character Mongo ObjectId
+const isMongoId = (id) => {
+  if (!id) return false;
+  const str = String(id);
+  return mongoose && mongoose.Types && mongoose.Types.ObjectId && mongoose.Types.ObjectId.isValid(str) && str.length === 24;
+};
 
 // Helper to normalize Mongo document `_id` to `id` string
 const formatDoc = (doc) => {
@@ -351,44 +364,76 @@ const formatDocs = (docs) => {
   return docs.map(formatDoc);
 };
 
-
-// Unified Export Interface
+// Unified Export Interface with Resilient Mongo -> SQLite Fallback
 module.exports = {
   isMongo,
   mongoose,
 
   getStudioInfo: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.StudioInfo ? models.StudioInfo.findOne({ id: 1 }) : null)
-        .then(info => cb(null, formatDoc(info)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.get("SELECT * FROM studio_info WHERE id = 1", [], cb);
-    } else {
-      cb(null, null);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.StudioInfo) {
+        return models.StudioInfo.findOne({ id: 1 }).then(info => formatDoc(info)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(info => {
+        if (info) return cb(null, info);
+        if (sqliteDb) return sqliteDb.get("SELECT * FROM studio_info WHERE id = 1", [], cb);
+        cb(null, null);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.get("SELECT * FROM studio_info WHERE id = 1", [], cb);
+        cb(null, null);
+      });
   },
 
   updateStudioInfo: (data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.StudioInfo.findOneAndUpdate(
-          { id: 1 },
-          {
-            $set: {
-              title: data.title, sub_title: data.sub_title, credo: data.credo,
-              bio_title: data.bio_title, bio_text: data.bio_text, quote_text: data.quote_text,
-              quote_author: data.quote_author, email: data.email, phone_1: data.phone_1,
-              phone_2: data.phone_2, address: data.address, founder_photo: data.founder_photo || '',
-              founder_name: data.founder_name || 'Karan Aherewal', founder_role: data.founder_role || 'Founder, House of Tod',
-              founder_portfolio: data.founder_portfolio || ''
-            }
-          },
-          { upsert: true, new: true }
-        ))
-        .then(() => cb(null))
-        .catch(err => cb(err));
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.StudioInfo) {
+      models.StudioInfo.findOneAndUpdate(
+        { id: 1 },
+        { $set: data },
+        { upsert: true, new: true }
+      )
+      .then(() => {
+        if (sqliteDb) {
+          sqliteDb.run(
+            `UPDATE studio_info SET 
+              title = ?, sub_title = ?, credo = ?, bio_title = ?, bio_text = ?, 
+              quote_text = ?, quote_author = ?, email = ?, phone_1 = ?, phone_2 = ?, address = ?,
+              founder_photo = ?, founder_name = ?, founder_role = ?, founder_portfolio = ?
+             WHERE id = 1`,
+            [
+              data.title, data.sub_title, data.credo, data.bio_title, data.bio_text,
+              data.quote_text, data.quote_author, data.email, data.phone_1, data.phone_2, data.address,
+              data.founder_photo || '', data.founder_name || 'Karan Aherewal', data.founder_role || 'Founder, House of Tod', data.founder_portfolio || ''
+            ],
+            () => {}
+          );
+        }
+        cb(null);
+      })
+      .catch(err => {
+        if (sqliteDb) {
+          sqliteDb.run(
+            `UPDATE studio_info SET 
+              title = ?, sub_title = ?, credo = ?, bio_title = ?, bio_text = ?, 
+              quote_text = ?, quote_author = ?, email = ?, phone_1 = ?, phone_2 = ?, address = ?,
+              founder_photo = ?, founder_name = ?, founder_role = ?, founder_portfolio = ?
+             WHERE id = 1`,
+            [
+              data.title, data.sub_title, data.credo, data.bio_title, data.bio_text,
+              data.quote_text, data.quote_author, data.email, data.phone_1, data.phone_2, data.address,
+              data.founder_photo || '', data.founder_name || 'Karan Aherewal', data.founder_role || 'Founder, House of Tod', data.founder_portfolio || ''
+            ],
+            cb
+          );
+        } else {
+          cb(err);
+        }
+      });
     } else if (sqliteDb) {
       sqliteDb.run(
         `UPDATE studio_info SET 
@@ -409,22 +454,29 @@ module.exports = {
   },
 
   getServices: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Service ? models.Service.find().sort({ _id: 1 }) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.all("SELECT * FROM services ORDER BY id ASC", [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Service) {
+        return models.Service.find().sort({ _id: 1 }).then(docs => formatDocs(docs)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(services => {
+        if (services && services.length > 0) return cb(null, services);
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM services ORDER BY id ASC", [], cb);
+        cb(null, services || []);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM services ORDER BY id ASC", [], cb);
+        cb(null, []);
+      });
   },
 
   addService: (data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Service.create(data))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Service) {
+      models.Service.create(data)
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -435,48 +487,65 @@ module.exports = {
   },
 
   updateService: (id, data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Service.findByIdAndUpdate(id, { $set: data }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("UPDATE services SET title = ?, description = ?, icon = ? WHERE id = ?", [data.title, data.description, data.icon, id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Service && isMId)
+      ? models.Service.findByIdAndUpdate(id, { $set: data }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("UPDATE services SET title = ?, description = ?, icon = ? WHERE id = ?", [data.title, data.description, data.icon, id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("UPDATE services SET title = ?, description = ?, icon = ? WHERE id = ?", [data.title, data.description, data.icon, id], cb);
+      else cb(null);
+    });
   },
 
   deleteService: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Service.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM services WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Service && isMId)
+      ? models.Service.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM services WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM services WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   getCredits: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Credit ? models.Credit.find().sort({ _id: 1 }) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.all("SELECT * FROM credits ORDER BY id ASC", [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Credit) {
+        return models.Credit.find().sort({ _id: 1 }).then(docs => formatDocs(docs)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(credits => {
+        if (credits && credits.length > 0) return cb(null, credits);
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM credits ORDER BY id ASC", [], cb);
+        cb(null, credits || []);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM credits ORDER BY id ASC", [], cb);
+        cb(null, []);
+      });
   },
 
   addCredit: (data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Credit.create(data))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Credit) {
+      models.Credit.create(data)
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -487,48 +556,65 @@ module.exports = {
   },
 
   updateCredit: (id, data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Credit.findByIdAndUpdate(id, { $set: data }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("UPDATE credits SET title = ?, role = ?, award = ? WHERE id = ?", [data.title, data.role, data.award, id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Credit && isMId)
+      ? models.Credit.findByIdAndUpdate(id, { $set: data }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("UPDATE credits SET title = ?, role = ?, award = ? WHERE id = ?", [data.title, data.role, data.award, id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("UPDATE credits SET title = ?, role = ?, award = ? WHERE id = ?", [data.title, data.role, data.award, id], cb);
+      else cb(null);
+    });
   },
 
   deleteCredit: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Credit.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM credits WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Credit && isMId)
+      ? models.Credit.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM credits WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM credits WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   getPricing: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Pricing ? models.Pricing.find().sort({ _id: 1 }) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.all("SELECT * FROM pricing ORDER BY id ASC", [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Pricing) {
+        return models.Pricing.find().sort({ _id: 1 }).then(docs => formatDocs(docs)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(pricing => {
+        if (pricing && pricing.length > 0) return cb(null, pricing);
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM pricing ORDER BY id ASC", [], cb);
+        cb(null, pricing || []);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM pricing ORDER BY id ASC", [], cb);
+        cb(null, []);
+      });
   },
 
   addPricing: (data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Pricing.create(data))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Pricing) {
+      models.Pricing.create(data)
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -539,50 +625,67 @@ module.exports = {
   },
 
   updatePricing: (id, data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Pricing.findByIdAndUpdate(id, { $set: data }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("UPDATE pricing SET name = ?, price = ?, period = ?, description = ?, features = ? WHERE id = ?", [data.name, data.price, data.period, data.description, data.features, id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Pricing && isMId)
+      ? models.Pricing.findByIdAndUpdate(id, { $set: data }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("UPDATE pricing SET name = ?, price = ?, period = ?, description = ?, features = ? WHERE id = ?", [data.name, data.price, data.period, data.description, data.features, id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("UPDATE pricing SET name = ?, price = ?, period = ?, description = ?, features = ? WHERE id = ?", [data.name, data.price, data.period, data.description, data.features, id], cb);
+      else cb(null);
+    });
   },
 
   deletePricing: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Pricing.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM pricing WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Pricing && isMId)
+      ? models.Pricing.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM pricing WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM pricing WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   getInquiries: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Inquiry ? models.Inquiry.find().sort({ _id: -1 }) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.all("SELECT * FROM inquiries ORDER BY id DESC", [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Inquiry) {
+        return models.Inquiry.find().sort({ _id: -1 }).then(docs => formatDocs(docs)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(inquiries => {
+        if (inquiries && inquiries.length > 0) return cb(null, inquiries);
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM inquiries ORDER BY id DESC", [], cb);
+        cb(null, inquiries || []);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM inquiries ORDER BY id DESC", [], cb);
+        cb(null, []);
+      });
   },
 
   addInquiry: (data, cb) => {
     const now = new Date();
     const formattedDate = now.toISOString().replace('T', ' ').slice(0, 19);
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Inquiry.create({ ...data, date: formattedDate }))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Inquiry) {
+      models.Inquiry.create({ ...data, date: formattedDate })
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -593,85 +696,130 @@ module.exports = {
   },
 
   markInquiryRead: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Inquiry.findByIdAndUpdate(id, { $set: { status: 'read' } }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("UPDATE inquiries SET status = 'read' WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Inquiry && isMId)
+      ? models.Inquiry.findByIdAndUpdate(id, { $set: { status: 'read' } }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("UPDATE inquiries SET status = 'read' WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("UPDATE inquiries SET status = 'read' WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   deleteInquiry: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Inquiry.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM inquiries WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Inquiry && isMId)
+      ? models.Inquiry.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM inquiries WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM inquiries WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   verifyAdmin: (username, password, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.AdminUser ? models.AdminUser.findOne({ username }) : null)
-        .then(user => {
-          if (!user) return cb(null, false);
-          const matches = bcrypt.compareSync(password, user.password_hash);
-          cb(null, matches ? formatDoc(user) : false);
-        })
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.get("SELECT * FROM admin_users WHERE username = ?", [username], (err, user) => {
-        if (err) return cb(err);
-        if (!user) return cb(null, false);
-        const matches = bcrypt.compareSync(password, user.password_hash);
-        cb(null, matches ? user : false);
+    const cleanUser = typeof username === 'string' ? username.trim().toLowerCase() : '';
+    
+    const checkMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.AdminUser) {
+        return models.AdminUser.findOne({ username: new RegExp('^' + cleanUser + '$', 'i') })
+          .then(user => {
+            if (user) {
+              const matches = bcrypt.compareSync(password, user.password_hash);
+              return matches ? formatDoc(user) : false;
+            }
+            return null; // Not found in Mongo, fallback to SQLite
+          })
+          .catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(checkMongo)
+      .then(userRes => {
+        if (userRes !== null) {
+          return cb(null, userRes);
+        }
+        if (sqliteDb) {
+          sqliteDb.get("SELECT * FROM admin_users WHERE LOWER(username) = LOWER(?)", [cleanUser], (err, user) => {
+            if (err || !user) return cb(null, false);
+            const matches = bcrypt.compareSync(password, user.password_hash);
+            cb(null, matches ? user : false);
+          });
+        } else {
+          cb(null, false);
+        }
+      })
+      .catch(() => {
+        if (sqliteDb) {
+          sqliteDb.get("SELECT * FROM admin_users WHERE LOWER(username) = LOWER(?)", [cleanUser], (err, user) => {
+            if (err || !user) return cb(null, false);
+            const matches = bcrypt.compareSync(password, user.password_hash);
+            cb(null, matches ? user : false);
+          });
+        } else {
+          cb(null, false);
+        }
       });
-    } else {
-      cb(null, false);
-    }
   },
 
   updateAdminPassword: (username, newPassword, cb) => {
+    const cleanUser = typeof username === 'string' ? username.trim().toLowerCase() : 'admin';
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(newPassword, salt);
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.AdminUser.findOneAndUpdate({ username }, { $set: { password_hash: hash } }))
+
+    if (sqliteDb) {
+      sqliteDb.run("UPDATE admin_users SET password_hash = ? WHERE LOWER(username) = LOWER(?)", [hash, cleanUser]);
+    }
+
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.AdminUser) {
+      models.AdminUser.findOneAndUpdate({ username: new RegExp('^' + cleanUser + '$', 'i') }, { $set: { password_hash: hash } })
         .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("UPDATE admin_users SET password_hash = ? WHERE username = ?", [hash, username], cb);
+        .catch(() => cb(null));
     } else {
       cb(null);
     }
   },
 
   getProjects: (cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Project ? models.Project.find().sort({ _id: 1 }) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.all("SELECT * FROM projects ORDER BY id ASC", [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Project) {
+        return models.Project.find().sort({ _id: 1 }).then(docs => formatDocs(docs)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(projects => {
+        if (projects && projects.length > 0) return cb(null, projects);
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM projects ORDER BY id ASC", [], cb);
+        cb(null, projects || []);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.all("SELECT * FROM projects ORDER BY id ASC", [], cb);
+        cb(null, []);
+      });
   },
 
   addProject: (data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Project.create(data))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Project) {
+      models.Project.create(data)
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -686,70 +834,112 @@ module.exports = {
   },
 
   updateProject: (id, data, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Project.findByIdAndUpdate(id, { $set: data }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run(
-        "UPDATE projects SET project_index = ?, tag = ?, title = ?, description = ?, chips = ?, highlight = ?, music_url = ?, poster_url = ? WHERE id = ?",
-        [data.project_index, data.tag, data.title, data.description || '', data.chips || '', data.highlight || 0, data.music_url || '', data.poster_url || '', id],
-        cb
-      );
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Project && isMId)
+      ? models.Project.findByIdAndUpdate(id, { $set: data }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run(
+          "UPDATE projects SET project_index = ?, tag = ?, title = ?, description = ?, chips = ?, highlight = ?, music_url = ?, poster_url = ? WHERE id = ?",
+          [data.project_index, data.tag, data.title, data.description || '', data.chips || '', data.highlight || 0, data.music_url || '', data.poster_url || '', id],
+          cb
+        );
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) {
+        sqliteDb.run(
+          "UPDATE projects SET project_index = ?, tag = ?, title = ?, description = ?, chips = ?, highlight = ?, music_url = ?, poster_url = ? WHERE id = ?",
+          [data.project_index, data.tag, data.title, data.description || '', data.chips || '', data.highlight || 0, data.music_url || '', data.poster_url || '', id],
+          cb
+        );
+      } else {
+        cb(null);
+      }
+    });
   },
 
   deleteProject: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.Project.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM projects WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.Project && isMId)
+      ? models.Project.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM projects WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM projects WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   getMusicTracks: (includeInactive, cb) => {
-    if (isMongo) {
-      const query = includeInactive ? {} : { active: 1 };
-      ensureConnected()
-        .then(() => models.MusicTrack ? models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1) : [])
-        .then(docs => cb(null, formatDocs(docs)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      const sql = includeInactive
-        ? "SELECT * FROM music_tracks ORDER BY display_order ASC, id ASC"
-        : "SELECT * FROM music_tracks WHERE active = 1 ORDER BY display_order ASC, id ASC LIMIT 1";
-      sqliteDb.all(sql, [], cb);
-    } else {
-      cb(null, []);
-    }
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack) {
+        const query = includeInactive ? {} : { active: 1 };
+        return models.MusicTrack.find(query).sort({ display_order: 1, _id: 1 }).limit(includeInactive ? 100 : 1)
+          .then(docs => formatDocs(docs))
+          .catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(tracks => {
+        if (tracks && tracks.length > 0) return cb(null, tracks);
+        if (sqliteDb) {
+          const sql = includeInactive
+            ? "SELECT * FROM music_tracks ORDER BY display_order ASC, id ASC"
+            : "SELECT * FROM music_tracks WHERE active = 1 ORDER BY display_order ASC, id ASC LIMIT 1";
+          return sqliteDb.all(sql, [], cb);
+        }
+        cb(null, tracks || []);
+      })
+      .catch(() => {
+        if (sqliteDb) {
+          const sql = includeInactive
+            ? "SELECT * FROM music_tracks ORDER BY display_order ASC, id ASC"
+            : "SELECT * FROM music_tracks WHERE active = 1 ORDER BY display_order ASC, id ASC LIMIT 1";
+          return sqliteDb.all(sql, [], cb);
+        }
+        cb(null, []);
+      });
   },
 
   getMusicTrackById: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MusicTrack ? models.MusicTrack.findById(id) : null)
-        .then(doc => cb(null, formatDoc(doc)))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.get("SELECT * FROM music_tracks WHERE id = ?", [id], cb);
-    } else {
-      cb(null, null);
-    }
+    const isMId = isMongoId(id);
+    const fetchMongo = () => {
+      if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack && isMId) {
+        return models.MusicTrack.findById(id).then(doc => formatDoc(doc)).catch(() => null);
+      }
+      return Promise.resolve(null);
+    };
+
+    ensureConnected()
+      .then(fetchMongo)
+      .then(track => {
+        if (track) return cb(null, track);
+        if (sqliteDb) return sqliteDb.get("SELECT * FROM music_tracks WHERE id = ?", [id], cb);
+        cb(null, null);
+      })
+      .catch(() => {
+        if (sqliteDb) return sqliteDb.get("SELECT * FROM music_tracks WHERE id = ?", [id], cb);
+        cb(null, null);
+      });
   },
 
   addMusicTrack: (data, cb) => {
     const now = new Date().toISOString();
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MusicTrack.deleteMany({}))
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack) {
+      models.MusicTrack.deleteMany({})
         .then(() => {
           return models.MusicTrack.create({
             title: data.title,
@@ -800,45 +990,59 @@ module.exports = {
     };
     if (data.filename) updateObj.filename = data.filename;
 
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MusicTrack.findByIdAndUpdate(id, { $set: updateObj }))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run(
-        "UPDATE music_tracks SET title = ?, artist = ?, filename = COALESCE(NULLIF(?, ''), filename), active = ?, updated_at = ? WHERE id = ?",
-        [data.title, data.artist, data.filename || '', data.active !== undefined ? data.active : 1, now, id],
-        cb
-      );
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack && isMId)
+      ? models.MusicTrack.findByIdAndUpdate(id, { $set: updateObj }).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run(
+          "UPDATE music_tracks SET title = ?, artist = ?, filename = COALESCE(NULLIF(?, ''), filename), active = ?, updated_at = ? WHERE id = ?",
+          [data.title, data.artist, data.filename || '', data.active !== undefined ? data.active : 1, now, id],
+          cb
+        );
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) {
+        sqliteDb.run(
+          "UPDATE music_tracks SET title = ?, artist = ?, filename = COALESCE(NULLIF(?, ''), filename), active = ?, updated_at = ? WHERE id = ?",
+          [data.title, data.artist, data.filename || '', data.active !== undefined ? data.active : 1, now, id],
+          cb
+        );
+      } else {
+        cb(null);
+      }
+    });
   },
 
   deleteMusicTrack: (id, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MusicTrack.findByIdAndDelete(id))
-        .then(() => cb(null))
-        .catch(err => cb(err));
-    } else if (sqliteDb) {
-      sqliteDb.run("DELETE FROM music_tracks WHERE id = ?", [id], cb);
-    } else {
-      cb(null);
-    }
+    const isMId = isMongoId(id);
+    const mongoPromise = (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack && isMId)
+      ? models.MusicTrack.findByIdAndDelete(id).catch(() => null)
+      : Promise.resolve();
+
+    mongoPromise.then(() => {
+      if (sqliteDb) {
+        sqliteDb.run("DELETE FROM music_tracks WHERE id = ?", [id], cb);
+      } else {
+        cb(null);
+      }
+    }).catch(() => {
+      if (sqliteDb) sqliteDb.run("DELETE FROM music_tracks WHERE id = ?", [id], cb);
+      else cb(null);
+    });
   },
 
   reorderMusicTracks: (orderedIds, cb) => {
     if (!Array.isArray(orderedIds) || orderedIds.length === 0) return cb(null);
-    if (isMongo) {
-      ensureConnected()
-        .then(() => {
-          const promises = orderedIds.map((id, idx) =>
-            models.MusicTrack.findByIdAndUpdate(id, { $set: { display_order: idx + 1 } })
-          );
-          return Promise.all(promises);
-        })
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MusicTrack) {
+      const promises = orderedIds.map((id, idx) =>
+        models.MusicTrack.findByIdAndUpdate(id, { $set: { display_order: idx + 1 } })
+      );
+      Promise.all(promises)
         .then(() => cb(null))
         .catch(err => cb(err));
     } else if (sqliteDb) {
@@ -855,24 +1059,22 @@ module.exports = {
   },
 
   saveMediaFile: (filename, contentType, dataUri, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MediaFile ? models.MediaFile.findOneAndUpdate(
-          { filename },
-          { $set: { filename, contentType, dataUri, created_at: new Date() } },
-          { upsert: true, new: true }
-        ) : null)
-        .then(file => cb(null, file))
-        .catch(err => cb(err));
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MediaFile) {
+      models.MediaFile.findOneAndUpdate(
+        { filename },
+        { $set: { filename, contentType, dataUri, created_at: new Date() } },
+        { upsert: true, new: true }
+      )
+      .then(file => cb(null, file))
+      .catch(err => cb(err));
     } else {
       cb(null, { filename, dataUri });
     }
   },
 
   getMediaFile: (filename, cb) => {
-    if (isMongo) {
-      ensureConnected()
-        .then(() => models.MediaFile ? models.MediaFile.findOne({ filename }) : null)
+    if (isMongo && mongoose && mongoose.connection.readyState === 1 && models.MediaFile) {
+      models.MediaFile.findOne({ filename })
         .then(file => cb(null, file))
         .catch(err => cb(err));
     } else {

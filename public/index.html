@@ -7,7 +7,25 @@
   <meta name="description"
     content="House of Tod — Ready-to-deploy Audio & Sound Production Studio in Pune. Crafting brand audio, sound design, and scores engineered for memory.">
   <title>House of Tod — Audio &amp; Sound Production Studio, Pune</title>
+  <link rel="canonical" href="https://house-of-tod-website.vercel.app/">
   <link rel="icon" type="image/png" href="assets/LOGO.png">
+
+  <!-- Open Graph / Social Media Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://house-of-tod-website.vercel.app/">
+  <meta property="og:title" content="House of Tod — Audio &amp; Sound Production Studio, Pune">
+  <meta property="og:description" content="Crafting brand audio, sound design, and scores engineered for memory — not just attention. Full-spectrum audio production in Pune.">
+  <meta property="og:image" content="https://house-of-tod-website.vercel.app/assets/LOGO.png">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://house-of-tod-website.vercel.app/">
+  <meta name="twitter:title" content="House of Tod — Audio &amp; Sound Production Studio, Pune">
+  <meta name="twitter:description" content="Crafting brand audio, sound design, and scores engineered for memory — not just attention. Full-spectrum audio production in Pune.">
+  <meta name="twitter:image" content="https://house-of-tod-website.vercel.app/assets/LOGO.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -15,14 +33,14 @@
 
   <!-- Fullscreen Studio Splash Screen -->
   <div id="splash-screen" class="splash-screen">
-    <video id="splash-video" class="splash-video" autoplay loop muted playsinline preload="auto">
+    <video id="splash-video" class="splash-video" autoplay loop muted playsinline poster="assets/splash-poster.jpg" preload="metadata">
       <source src="House of tod vertical.mp4" type="video/mp4" media="(max-width: 768px)">
       <source src="Hero.mp4" type="video/mp4">
     </video>
     <div class="splash-overlay"></div>
     <div class="splash-content">
       <div class="splash-brand">
-        <img src="assets/LOGO.png" alt="House of Tod Logo" class="splash-logo">
+        <img src="assets/LOGO.png" alt="House of Tod Logo" class="splash-logo" decoding="async" fetchpriority="high">
         <span class="splash-eyebrow">Audio &amp; Sound Production Studio</span>
       </div>
       <button id="enter-studio-btn" class="splash-btn-glass" aria-label="Enter the Studio">
@@ -107,11 +125,11 @@
     <video
       id="hero-bg-video"
       class="hero-bg-video"
-      autoplay
       loop
       muted
       playsinline
-      preload="auto"
+      poster="assets/hero-poster.jpg"
+      preload="none"
       aria-hidden="true"
     >
       <source src="House of tod vertical.mp4" type="video/mp4" media="(max-width: 768px)">
@@ -555,7 +573,31 @@
         <img src="assets/LOGO.png" alt="House of Tod logo">
         <span>House of Tod</span>
       </div>
-      <div class="foot-right">© 2026 House of Tod. Sound that stays.</div>
+      <div class="foot-right-group">
+        <div class="foot-social-col">
+          <span class="foot-social-label">Follow Us on</span>
+          <div class="foot-social-links">
+            <a href="https://www.instagram.com/houseoftod/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noopener noreferrer" class="foot-insta-link" aria-label="House of Tod Instagram">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              <span>Instagram</span>
+            </a>
+            <span class="foot-social-divider">|</span>
+            <a href="https://www.linkedin.com/company/house-of-tod-studio/" target="_blank" rel="noopener noreferrer" class="foot-insta-link foot-linkedin-link" aria-label="House of Tod LinkedIn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+              <span>LinkedIn</span>
+            </a>
+          </div>
+        </div>
+        <div class="foot-right">© 2026 House of Tod. Sound that stays.</div>
+      </div>
     </div>
   </footer>
 
@@ -610,10 +652,10 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" defer></script>
+  <script src="app.js" defer></script>
 </body>
 
 </html>

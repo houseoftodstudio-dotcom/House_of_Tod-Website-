@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const splashScreen = document.getElementById('splash-screen');
     const enterBtn = document.getElementById('enter-studio-btn');
     const splashVideo = document.getElementById('splash-video');
+    const heroVideo = document.getElementById('hero-bg-video');
     const audio = document.getElementById('vinyl-audio');
 
     if (!splashScreen || !enterBtn) return;
@@ -202,16 +203,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.warn('[Splash] Audio play on enter error:', err));
       }
 
-      // 2. Smooth fade out splash screen overlay
+      // 2. Start hero background video playback on splash dismiss
+      if (heroVideo && heroVideo.paused) {
+        heroVideo.load();
+        heroVideo.play().catch(() => {});
+      }
+
+      // 3. Smooth fade out splash screen overlay
       splashScreen.classList.add('fade-out');
 
-      // 3. Pause video after fade out to optimize GPU/CPU performance
+      // 4. Pause video after fade out to optimize GPU/CPU performance
       setTimeout(() => {
         if (splashVideo) splashVideo.pause();
         splashScreen.style.display = 'none';
       }, 900);
 
-      // 4. Refresh Lenis / GSAP smooth scroll proxy if available
+      // 5. Refresh Lenis / GSAP smooth scroll proxy if available
       if (window.__hotMotion && window.__hotMotion.lenis) {
         window.__hotMotion.lenis.resize();
       }
@@ -227,37 +234,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('hero-bg-video');
     if (!video) return;
 
-    // Ensure autoplay attribute is set
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
 
-    // Start playback – safe for browsers that suspend autoplay
-    const tryPlay = () => {
-      video.play().catch(() => {
-        // If autoplay is blocked, try again on first user interaction
-        const onInteract = () => {
-          video.play().catch(() => {});
-          document.removeEventListener('click', onInteract);
-          document.removeEventListener('touchstart', onInteract);
-        };
-        document.addEventListener('click', onInteract, { once: true });
-        document.addEventListener('touchstart', onInteract, { once: true });
-      });
+    // Defer hero video load until browser idle or user interaction to ensure instant FCP/LCP
+    const startHeroVideo = () => {
+      if (video.paused && video.getAttribute('preload') === 'none') {
+        video.setAttribute('preload', 'metadata');
+        video.load();
+        video.play().catch(() => {
+          const onInteract = () => {
+            video.play().catch(() => {});
+            document.removeEventListener('click', onInteract);
+            document.removeEventListener('touchstart', onInteract);
+          };
+          document.addEventListener('click', onInteract, { once: true });
+          document.addEventListener('touchstart', onInteract, { once: true });
+        });
+      }
     };
 
-    tryPlay();
+    // If splash screen is absent, start video after window load
+    const splashScreen = document.getElementById('splash-screen');
+    if (!splashScreen || splashScreen.style.display === 'none') {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(startHeroVideo, { timeout: 2000 });
+      } else {
+        setTimeout(startHeroVideo, 1200);
+      }
+    }
 
-    // Safety net: some browsers still fire 'ended' even with loop=true
+    // Safety net: restart if ended
     video.addEventListener('ended', () => {
       video.currentTime = 0;
       video.play().catch(() => {});
     });
 
-    // Stall recovery: restart if the video freezes / stalls
+    // Stall recovery
     video.addEventListener('stalled', () => {
       video.load();
-      tryPlay();
+      video.play().catch(() => {});
     });
   })();
 
@@ -830,7 +847,8 @@ document.addEventListener('DOMContentLoaded', () => {
     gsap.set(document.body, { opacity: 0 });
 
     let lenis = null;
-    if (typeof Lenis !== 'undefined') {
+    const isMobileTouch = window.innerWidth <= 768 || window.matchMedia('(pointer: coarse)').matches;
+    if (typeof Lenis !== 'undefined' && !isMobileTouch) {
       lenis = new Lenis({
         duration: 1.15,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -1200,7 +1218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const footer = document.querySelector('footer');
       if (footer && !footer.dataset.stRegistered) {
-        const footEls = footer.querySelectorAll('.foot-logo, .foot-right');
+        const footEls = footer.querySelectorAll('.foot-logo, .foot-social-col, .foot-right');
         if (footEls.length > 0) {
           footer.dataset.stRegistered = '1';
           gsap.from(footEls, {

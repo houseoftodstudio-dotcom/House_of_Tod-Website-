@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 — Internal Studio Error | House of Tod</title>
+  <link rel="icon" type="image/png" href="/assets/LOGO.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg: #09090b;
+      --coral: #e47364;
+      --coral-hover: #d35d4d;
+      --text: #ffffff;
+      --text-dim: #9b938d;
+      --border-radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+      background-image: radial-gradient(circle at 50% 30%, rgba(228, 115, 100, 0.12) 0%, transparent 60%);
+    }
+    .error-card {
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 48px 36px;
+      border-radius: 16px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    }
+    .error-code {
+      font-family: 'Outfit', sans-serif;
+      font-size: 84px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--coral);
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .error-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .error-desc {
+      font-size: 15px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--coral);
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: var(--border-radius);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(228, 115, 100, 0.3);
+    }
+    .btn-home:hover {
+      background-color: var(--coral-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(228, 115, 100, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <div class="error-card">
+    <div class="error-code">500</div>
+    <h1 class="error-title">Studio Signal Interrupted</h1>
+    <p class="error-desc">An unexpected server error occurred while processing your request. Our technical team has been notified.</p>
+    <a href="/" class="btn-home">Return to Studio Home</a>
+  </div>
+</body>
+</html>

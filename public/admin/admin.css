@@ -671,6 +671,22 @@ body.db-body {
   }
 }
 
+@media (max-width: 768px) {
+  .glow-orb {
+    filter: blur(40px) !important;
+    animation: none !important;
+    opacity: 0.5 !important;
+  }
+  .login-card,
+  .db-panel,
+  .db-sidebar,
+  .content-header {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(15, 14, 13, 0.96) !important;
+  }
+}
+
 /* CMS Config Grid */
 .panel-grid {
   display: grid;
@@ -810,10 +826,13 @@ body.db-body {
 /* Inquiries Table */
 .inquiries-table-container {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--border-radius);
 }
 
 .inquiries-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   text-align: left;
 }

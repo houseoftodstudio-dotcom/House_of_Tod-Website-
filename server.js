@@ -84,6 +84,16 @@ if (MONGODB_URI) {
 
 app.use(session(sessionConfig));
 
+// HTTP Security Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
 // Simple custom rate limiting & lockout stores
 const rateLimits = new Map();
 const loginFailures = new Map();
@@ -152,41 +162,49 @@ const requireAuth = (req, res, next) => {
   }
 };
 
-// Route protection for static files
+// Strict Admin Route Isolation Middleware for frontend routes and static files
 app.get('/login.html', (req, res) => {
   res.redirect('/admin/login.html');
 });
 
-app.get('/admin/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin', 'login.html'));
-});
-
-app.get('/admin', (req, res) => {
-  if (!req.session || !req.session.user) {
-    return res.redirect('/admin/login.html');
+app.use('/admin', (req, res, next) => {
+  if (req.path === '/login.html' || req.path === '/login') {
+    return next();
   }
-  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
-});
-
-app.get('/admin/index.html', (req, res) => {
-  if (!req.session || !req.session.user) {
-    return res.redirect('/admin/login.html');
+  if (req.session && req.session.user) {
+    return next();
   }
-  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(401).json({ error: 'Unauthorized: Admin authentication required' });
+  }
+  return res.redirect('/admin/login.html');
 });
 
-// Serve static frontend assets
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static frontend assets with browser caching enabled
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '7d',
+  etag: true,
+  lastModified: true
+}));
 
+/* ==========================================================================
+   SERVERLESS MEDIA DISPATCHER (Serves Base64 / MongoDB / Local Files)
+   ========================================================================== */
 /* ==========================================================================
    SERVERLESS MEDIA DISPATCHER (Serves Base64 / MongoDB / Local Files)
    ========================================================================== */
 app.get('/uploads/:filename', (req, res) => {
   const filename = req.params.filename;
   const localUploadPath = path.join(uploadDir, filename);
+  const localAudioPath = path.join(audioUploadDir, filename);
 
   if (fs.existsSync(localUploadPath)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return res.sendFile(localUploadPath);
+  }
+  if (fs.existsSync(localAudioPath)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(localAudioPath);
   }
 
   db.getMediaFile(filename, (err, file) => {
@@ -196,7 +214,7 @@ app.get('/uploads/:filename', (req, res) => {
       const mime = match ? match[1] : 'image/jpeg';
       const imgBuffer = Buffer.from(parts[1], 'base64');
       res.setHeader('Content-Type', mime);
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       return res.send(imgBuffer);
     }
 
@@ -206,6 +224,17 @@ app.get('/uploads/:filename', (req, res) => {
 
 app.get('/api/media/:filename', (req, res) => {
   const filename = req.params.filename;
+  const localUploadPath = path.join(uploadDir, filename);
+  const localAudioPath = path.join(audioUploadDir, filename);
+
+  if (fs.existsSync(localUploadPath)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(localUploadPath);
+  }
+  if (fs.existsSync(localAudioPath)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(localAudioPath);
+  }
 
   db.getMediaFile(filename, (err, file) => {
     if (!err && file && file.dataUri) {
@@ -214,18 +243,8 @@ app.get('/api/media/:filename', (req, res) => {
       const mime = match ? match[1] : 'application/octet-stream';
       const imgBuffer = Buffer.from(parts[1], 'base64');
       res.setHeader('Content-Type', mime);
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       return res.send(imgBuffer);
-    }
-
-    const localUploadPath = path.join(uploadDir, filename);
-    const localAudioPath = path.join(audioUploadDir, filename);
-
-    if (fs.existsSync(localUploadPath)) {
-      return res.sendFile(localUploadPath);
-    }
-    if (fs.existsSync(localAudioPath)) {
-      return res.sendFile(localAudioPath);
     }
 
     res.sendFile(path.join(__dirname, 'public', 'assets', 'OOH Digital launch poster.png'));
@@ -242,19 +261,23 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   const ext = path.extname(req.file.originalname);
   const name = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `${name}_${Date.now()}${ext}`;
-  const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-  db.saveMediaFile(filename, req.file.mimetype, dataUri, (err) => {
-    if (err) console.error("Error saving media to DB:", err.message);
+  try {
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
+  } catch (e) {
+    console.error("Error writing upload to disk:", e.message);
+  }
 
-    try {
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-      fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
-    } catch (e) {}
+  if (req.file.buffer.length <= 12 * 1024 * 1024) {
+    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    db.saveMediaFile(filename, req.file.mimetype, dataUri, (err) => {
+      if (err) console.error("Error saving media to DB:", err.message);
+    });
+  }
 
-    const fileUrl = `/api/media/${filename}`;
-    res.json({ success: true, url: fileUrl, filename: filename });
-  });
+  const fileUrl = `/api/media/${filename}`;
+  res.json({ success: true, url: fileUrl, filename: filename });
 });
 
 /* ==========================================================================
@@ -672,23 +695,27 @@ app.post('/api/music/upload', requireAuth, (req, res) => {
     const ext = path.extname(req.file.originalname);
     const name = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
     const filename = `${name}_${Date.now()}${ext}`;
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-    db.saveMediaFile(filename, req.file.mimetype, dataUri, (saveErr) => {
-      if (saveErr) console.error("Error saving audio media to DB:", saveErr.message);
+    try {
+      if (!fs.existsSync(audioUploadDir)) fs.mkdirSync(audioUploadDir, { recursive: true });
+      fs.writeFileSync(path.join(audioUploadDir, filename), req.file.buffer);
+    } catch (e) {
+      console.error("Error writing audio upload to disk:", e.message);
+    }
 
-      try {
-        if (!fs.existsSync(audioUploadDir)) fs.mkdirSync(audioUploadDir, { recursive: true });
-        fs.writeFileSync(path.join(audioUploadDir, filename), req.file.buffer);
-      } catch (e) {}
-
-      const fileUrl = `/api/media/${filename}`;
-      res.json({
-        success: true,
-        url: fileUrl,
-        filename: filename,
-        originalName: req.file.originalname
+    if (req.file.buffer.length <= 12 * 1024 * 1024) {
+      const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      db.saveMediaFile(filename, req.file.mimetype, dataUri, (saveErr) => {
+        if (saveErr) console.error("Error saving audio media to DB:", saveErr.message);
       });
+    }
+
+    const fileUrl = `/api/media/${filename}`;
+    return res.json({
+      success: true,
+      url: fileUrl,
+      filename: filename,
+      originalName: req.file.originalname
     });
   });
 });
@@ -785,9 +812,38 @@ app.post('/api/music/reorder', requireAuth, (req, res) => {
   });
 });
 
-// Catch-all route to serve static index.html for frontend navigation
+// Catch-all route for API 404
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Catch-all route to serve static index.html for frontend navigation or custom 404 page for missing files
 app.get('*', (req, res) => {
+  const ext = path.extname(req.path);
+  if (ext && ext !== '.html') {
+    return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Global Express Error Handling Middleware (Masks stack traces in production mode)
+app.use((err, req, res, next) => {
+  console.error('[Unhandled Error]', err.stack || err.message || err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+
+  if (req.path.startsWith('/api/') || req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      ...(isProd ? {} : { message: err.message })
+    });
+  }
+
+  res.status(500).sendFile(path.join(__dirname, 'public', '500.html'));
 });
 
 // Export app for Vercel Serverless Function deployment
