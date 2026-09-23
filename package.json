@@ -15,7 +15,9 @@
     "express-session": "^1.18.0",
     "mongodb": "^6.8.0",
     "mongoose": "^8.5.2",
-    "multer": "^2.2.0",
+    "multer": "^2.2.0"
+  },
+  "optionalDependencies": {
     "sqlite3": "^5.1.7"
   }
 }
