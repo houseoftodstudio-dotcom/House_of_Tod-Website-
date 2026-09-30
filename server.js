@@ -849,8 +849,8 @@ app.use((err, req, res, next) => {
 // Export app for Vercel Serverless Function deployment
 module.exports = app;
 
-// Start local dev server if not executing inside Vercel serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Start local dev server if executed directly (not when imported as a serverless function)
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`House of Tod Server running at http://localhost:${PORT}`);
   });

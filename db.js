@@ -242,12 +242,13 @@ if (isMongo && mongoose) {
   ensureConnected();
 }
 
-// Always initialize SQLite Database as a failover fallback
+// Always initialize SQLite Database as a failover fallback (local development only)
 let sqliteDb = null;
-try {
-  const sqlite3 = require('sqlite3').verbose();
-  const dbPath = path.resolve(__dirname, 'database.sqlite');
-  sqliteDb = new sqlite3.Database(dbPath);
+if (!process.env.VERCEL) {
+  try {
+    const sqlite3 = require('sqlite3').verbose();
+    const dbPath = path.resolve(__dirname, 'database.sqlite');
+    sqliteDb = new sqlite3.Database(dbPath);
 
   sqliteDb.serialize(() => {
     sqliteDb.run(`
@@ -341,7 +342,8 @@ try {
     });
   });
 } catch (sqliteErr) {
-  console.warn("SQLite initialization error:", sqliteErr.message);
+    console.warn("SQLite initialization error:", sqliteErr.message);
+  }
 }
 
 // Helper to check if string is a 24-character Mongo ObjectId
